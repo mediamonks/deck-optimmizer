@@ -1,33 +1,37 @@
 const fs = require('fs-extra');
+const {execFile} = require('child_process');
 const {google} = require('googleapis');
-const getOAuth2Client = require('./util/getOAuth2Client');
 const axios = require('axios');
 const AWS = require('aws-sdk');
-const {execFile} = require('child_process');
 const gifsicle = require('gifsicle');
-const inquirer = require('inquirer');
 const filetype = require('file-type-cjs');
+const inquirer = require('inquirer');
+
+const getOAuth2Client = require('./util/getOAuth2Client');
+const formatSizeUnits = require('./util/formatSizeUnits');
 
 const sourcePresentationId = '1PLKS9xHHszj6Go8E2kaWd0kQFVYk16LNd3_NeQe5vY8';
 
-function formatSizeUnits(bytes){
-    if      (bytes >= 1073741824) { bytes = (bytes / 1073741824).toFixed(2) + " GB"; }
-    else if (bytes >= 1048576)    { bytes = (bytes / 1048576).toFixed(2) + " MB"; }
-    else if (bytes >= 1024)       { bytes = (bytes / 1024).toFixed(2) + " KB"; }
-    else if (bytes > 1)           { bytes = bytes + " bytes"; }
-    else if (bytes === 1)          { bytes = bytes + " byte"; }
-    else                          { bytes = "0 bytes"; }
-    return bytes;
-}
+
 
 (async () => {
     // set up the slides/drive API services
     const credentials = await fs.readJson('./creds/credentials.json');
-    const oAuth2Client = await getOAuth2Client(credentials);
+    const oAuth2Client = await getOAuth2Client(
+        credentials.google.client_id,
+        credentials.google.client_secret,
+        credentials.google.redirect_uris[0],
+        [
+            'https://www.googleapis.com/auth/presentations',
+            'https://www.googleapis.com/auth/drive'
+        ]
+    );
+
+
     const slidesService = google.slides({version: 'v1', auth: oAuth2Client});
     const driveService = google.drive({version: 'v3', auth: oAuth2Client});
 
-
+    return;
     //copy the existing presentation
     const originalPresentation = await slidesService.presentations.get({presentationId: sourcePresentationId});
 
