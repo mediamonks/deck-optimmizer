@@ -4,15 +4,10 @@ const url = require('url');
 const open = require('open');
 const fs = require('fs-extra');
 const destroyer = require('server-destroy');
-const inquirer = require('inquirer');
-//const Filenames = require('../data/Filenames');
+
+
 
 module.exports = async function getOAuth2Client(credentials) {
-  // let data = {
-  //   clientId: credentials.web.client_id,
-  //   clientSecret: credentials.web.client_secret
-  // };
-
   try {
 
     const oauthClient = new OAuth2Client({
@@ -27,26 +22,6 @@ module.exports = async function getOAuth2Client(credentials) {
     return oauthClient;
 
   } catch (e) {
-
-    console.log(e);
-
-    // const { clientId } = await inquirer.prompt({
-    //   type: 'input',
-    //   name: 'clientId',
-    //   message: 'Client ID?',
-    //   default: process.env.displayMonks_clientId,
-    // });
-    //
-    // const { clientSecret } = await inquirer.prompt({
-    //   type: 'input',
-    //   name: 'clientSecret',
-    //   message: 'Client Secret?',
-    //   default: process.env.displayMonks_clientSecret,
-    // });
-
-    // data = {
-    //   clientId, clientSecret
-    // }
 
     return new Promise((resolve, reject) => {
 

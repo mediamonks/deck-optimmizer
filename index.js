@@ -1,5 +1,4 @@
 const fs = require('fs-extra');
-const readline = require('readline');
 const {google} = require('googleapis');
 const getOAuth2Client = require('./util/getOAuth2Client');
 const axios = require('axios');
@@ -9,14 +8,14 @@ const gifsicle = require('gifsicle');
 const inquirer = require('inquirer');
 const filetype = require('file-type-cjs');
 
-const sourcePresentationId = '1d00l9lf7nkarfx_LKmpl77xoL8uUlh_8QuIya5Fyaww';
+const sourcePresentationId = '1PLKS9xHHszj6Go8E2kaWd0kQFVYk16LNd3_NeQe5vY8';
 
 function formatSizeUnits(bytes){
     if      (bytes >= 1073741824) { bytes = (bytes / 1073741824).toFixed(2) + " GB"; }
     else if (bytes >= 1048576)    { bytes = (bytes / 1048576).toFixed(2) + " MB"; }
     else if (bytes >= 1024)       { bytes = (bytes / 1024).toFixed(2) + " KB"; }
     else if (bytes > 1)           { bytes = bytes + " bytes"; }
-    else if (bytes == 1)          { bytes = bytes + " byte"; }
+    else if (bytes === 1)          { bytes = bytes + " byte"; }
     else                          { bytes = "0 bytes"; }
     return bytes;
 }
@@ -33,9 +32,11 @@ function formatSizeUnits(bytes){
     const originalPresentation = await slidesService.presentations.get({presentationId: sourcePresentationId});
 
     console.log('copying', originalPresentation.data.title, 'with id', originalPresentation.data.presentationId)
+
     const presentationId = await new Promise((resolve) => {
         driveService.files.copy({
             fileId: originalPresentation.data.presentationId,
+            supportsAllDrives: true,
             resource: {
                 name: 'Optimized Copy of ' + originalPresentation.data.title,
             },
@@ -103,7 +104,7 @@ function formatSizeUnits(bytes){
             execFile(gifsicle, [ // http://www.lcdf.org/gifsicle/man.html
                 '--lossy=200',
                 '-o', newImagePath,
-                tempImagePath], (error, stdout, stderr) => {
+                tempImagePath], (error, stdout) => {
 
                 if (error) {
                     throw error;
@@ -121,18 +122,19 @@ function formatSizeUnits(bytes){
         // check if optimization is more than threshold
         if (optimizationPercentage < 5) {
             console.log('barely any optimization')
+            continue;
 
-            const question = await inquirer.prompt({
-                type: 'confirm',
-                name: 'skip',
-                message: 'Skip this one?'
-            });
-
-            if (question.skip) {
-                continue; //skip
-            } else {
-                console.log('not skipping')
-            }
+            // const question = await inquirer.prompt({
+            //     type: 'confirm',
+            //     name: 'skip',
+            //     message: 'Skip this one?'
+            // });
+            //
+            // if (question.skip) {
+            //     continue; //skip
+            // } else {
+            //     console.log('not skipping')
+            // }
         }
 
         // upload gif to s3 bucket
@@ -159,8 +161,6 @@ function formatSizeUnits(bytes){
 
         console.log('new image url', newImageUrl);
 
-
-
         // replace image URL in slides
         let requests = [{
             replaceImage: {
@@ -171,18 +171,21 @@ function formatSizeUnits(bytes){
         }];
 
         const imgUpdateRequest = await new Promise(resolve => {
-            slidesService.presentations.batchUpdate({
-                presentationId,
-                resource: {requests},
-            }, (err, response) => {
-                if (err) {
-                    throw err;
-                }
+            try {
+                slidesService.presentations.batchUpdate({
+                    presentationId,
+                    resource: {requests},
+                }, (err, response) => {
+                    if (err) {
+                        throw err;
+                    }
 
-                resolve(response);
-            });
+                    resolve(response);
+                });
+            } catch (e) {
+                console.log(e);
+            }
         })
-
         console.log('result', imgUpdateRequest.statusText);
     }
 
