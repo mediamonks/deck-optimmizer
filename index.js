@@ -138,12 +138,12 @@ function formatSizeUnits(bytes){
         // upload gif to s3 bucket
         const fileContent = fs.readFileSync(newImagePath);
         const s3 = new AWS.S3({
-            accessKeyId: 'AKIA6CQ5QLZC34ZFAHHF',
-            secretAccessKey: '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'
+            accessKeyId: credentials.aws.accessKeyId,
+            secretAccessKey: credentials.aws.secretAccessKey
         });
 
         const params = {
-            Bucket: 'richmedia-previews-s3bucket-tu6a9uv81tss',
+            Bucket: credentials.aws.bucket,
             Key: imageObjectId+'.gif', // File name you want to save as in S3
             Body: fileContent
         };
