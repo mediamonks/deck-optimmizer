@@ -1,20 +1,19 @@
-const { OAuth2Client } = require('google-auth-library');
+const {google} = require('googleapis');
 const http = require('http');
 const url = require('url');
 const open = require('open');
 const fs = require('fs-extra');
 const destroyer = require('server-destroy');
 
+module.exports = async function getOAuth2Client(clientId, clientSecret, redirectUrl, scopes) {
+  const oauthClient = new google.auth.OAuth2(
+      clientId,
+      clientSecret,
+      redirectUrl
+  );
 
-
-module.exports = async function getOAuth2Client(credentials) {
   try {
-
-    const oauthClient = new OAuth2Client({
-      clientId: credentials.web.client_id,
-      clientSecret: credentials.web.client_secret,
-    });
-
+    const credentials = await fs.readJson('./.googlerc')
     oauthClient.credentials.access_token = credentials.tokens.access_token;
     oauthClient.credentials.refresh_token = credentials.tokens.refresh_token;
     oauthClient.credentials.expiry_date = credentials.tokens.expiry_date;
@@ -24,22 +23,10 @@ module.exports = async function getOAuth2Client(credentials) {
   } catch (e) {
 
     return new Promise((resolve, reject) => {
-
-      // create an oAuth client to authorize the API call.  Secrets are kept in a `keys.json` file,
-      // which should be downloaded from the Google Developers Console.
-      const oAuth2Client = new OAuth2Client(
-          credentials.web.client_id,
-          credentials.web.client_secret,
-          "http://localhost:3000/oauth2callback"
-      );
-
       // Generate the url that will be used for the consent dialog.
-      const authorizeUrl = oAuth2Client.generateAuthUrl({
+      const authorizeUrl = oauthClient.generateAuthUrl({
         access_type: 'offline',
-        scope: [
-          'https://www.googleapis.com/auth/presentations',
-          'https://www.googleapis.com/auth/drive'
-        ]
+        scope: scopes
       });
 
       // Open an http server to accept the oauth callback. In this simple example, the
@@ -57,18 +44,18 @@ module.exports = async function getOAuth2Client(credentials) {
               server.destroy();
 
               // Now that we have the code, use that to acquire tokens.
-              const r = await oAuth2Client.getToken(code);
+              const r = await oauthClient.getToken(code);
               // Make sure to set the credentials on the OAuth2 client.
-              oAuth2Client.setCredentials(r.tokens);
+              oauthClient.setCredentials(r.tokens);
               console.info('Tokens acquired.');
 
-              credentials.tokens = {};
-              credentials.tokens.access_token = oAuth2Client.credentials.access_token;
-              credentials.tokens.refresh_token = oAuth2Client.credentials.refresh_token;
-              credentials.tokens.expiry_date = oAuth2Client.credentials.expiry_date;
-              await fs.writeJson('./creds/credentials.json', credentials);
+              // credentials.tokens = {};
+              // credentials.tokens.access_token = oAuth2Client.credentials.access_token;
+              // credentials.tokens.refresh_token = oAuth2Client.credentials.refresh_token;
+              // credentials.tokens.expiry_date = oAuth2Client.credentials.expiry_date;
+              // await fs.writeJson('./creds/credentials.json', credentials);
 
-              resolve(oAuth2Client);
+              resolve(oauthClient);
             }
           } catch (e) {
             reject(e);
