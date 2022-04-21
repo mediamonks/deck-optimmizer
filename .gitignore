@@ -1,5 +1,7 @@
 .idea
 node_modules
 credentials.json
-/gif
+creds.json
 
+
+deck-optimmizer-serviceaccount-creds.json
