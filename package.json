@@ -12,6 +12,7 @@
   "dependencies": {
     "aws-sdk": "^2.1117.0",
     "axios": "^0.26.1",
+    "express": "^4.17.3",
     "file-type-cjs": "^1.0.5",
     "fs-extra": "^10.1.0",
     "gifsicle": "^5.3.0",
