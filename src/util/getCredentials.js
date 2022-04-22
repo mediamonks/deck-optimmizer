@@ -6,7 +6,7 @@ module.exports = async function getCredentials( credsFilePath ) {
     try {
         credentials = await fs.readJson(credsFilePath);
     } catch (e) {
-        const questions = ['client_id', 'client_secret', 'redirect_uri', 'accessKeyId', 'secretAccessKey', 'bucket'].map(question => {
+        const google_questions = ['client_email', 'private_key'].map(question => {
             return {
                 type: 'input',
                 name: question,
@@ -14,20 +14,26 @@ module.exports = async function getCredentials( credsFilePath ) {
             }
         })
 
-        const answers = await inquirer.prompt(questions);
+        const google_answers = await inquirer.prompt(google_questions);
+
+        const aws_questions = ['accessKeyId', 'secretAccessKey', 'bucket'].map(question => {
+            return {
+                type: 'input',
+                name: question,
+                message: question
+            }
+        })
+
+
+        const aws_answers = await inquirer.prompt(aws_questions);
 
         credentials = {
             'google': {
-                'client_id': answers.client_id,
-                'client_secret': answers.client_secret,
-                'redirect_uris': [
-                    answers.redirect_uri
-                ]
+                client_email: google_answers.client_email,
+                private_key: '-----BEGIN PRIVATE KEY-----\n'+google_answers.private_key+'\n-----END PRIVATE KEY-----'
             },
             'aws': {
-                'accessKeyId': answers.accessKeyId,
-                'secretAccessKey': answers.secretAccessKey,
-                'bucket': answers.bucket
+                ...aws_answers
             }
         }
         await fs.writeJson(credsFilePath, credentials);
