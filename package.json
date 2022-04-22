@@ -2,8 +2,9 @@
   "name": "deck-optimmizer",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "./src/index.js",
   "scripts": {
+    "dev": "node ./src/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -19,6 +20,7 @@
     "googleapis": "^100.0.0",
     "inquirer": "^8.2.2",
     "open": "^8.4.0",
-    "server-destroy": "^1.0.1"
+    "server-destroy": "^1.0.1",
+    "socket.io": "^4.4.1"
   }
 }

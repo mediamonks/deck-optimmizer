@@ -1,7 +1,7 @@
 const {google} = require("googleapis");
 
-module.exports = async function replaceImageInGoogleSlides(presentationId, imageObjectId, newImageUrl, oAuth2Client) {
-    const slidesService = google.slides({version: 'v1', auth: oAuth2Client});
+module.exports = async function replaceImageInGoogleSlides(presentationId, imageObjectId, newImageUrl, auth) {
+    const slidesService = google.slides({version: 'v1', auth});
 
     const imageReplaceMethod = 'CENTER_INSIDE';
     // replace image URL in slides
