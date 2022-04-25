@@ -1,27 +1,122 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Socket.IO chat</title>
+    <title>Deck Optimmizer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;900&display=swap" rel="stylesheet">
     <style>
-        body { margin: 0; padding-bottom: 3rem; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        body {
+            margin: 0;
+            font-family: 'Roboto', sans-serif;
+            background-color: #000;
+            color: #fff
+        }
 
-        #form { background: rgba(0, 0, 0, 0.15); padding: 0.25rem; position: fixed; top: 0; left: 0; right: 0; display: flex; height: 3rem; box-sizing: border-box; backdrop-filter: blur(10px); }
-        #input { border: none; padding: 0 1rem; flex-grow: 1; border-radius: 2rem; margin: 0.25rem; }
-        #input:focus { outline: none; }
-        #form > button { background: #333; border: none; padding: 0 1rem; margin: 0.25rem; border-radius: 3px; outline: none; color: #fff; }
+        .main {
+            position: absolute;
+            width: 800px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            background-color: #000;
+            height: 100%
+        }
 
-        #messages { list-style-type: none; margin: 0; padding: 0; }
-        #messages > li { padding: 0.5rem 1rem; }
-        #messages > li:nth-child(odd) { background: #efefef; }
+        .title {
+            font-family: 'Roboto', sans-serif;
+            font-size: 40px;
+            font-weight: 900;
+            padding-top: 50px;
+
+        }
+
+        .title sup {
+            font-size: 15px;
+            color: blue;
+            font-weight: 400;
+        }
+
+        .helpTxt {
+            padding-top: 20px;
+        }
+
+        .form {
+            padding-top: 20px;
+        }
+
+        #messages {
+            list-style-type: none;
+            font-size: 10px;
+            text-align: left;
+            margin: 0;
+            padding: 0;
+            padding-top: 10px;
+            display: none;
+        }
+
+        #messages a {
+            color: #fff;
+        }
+
+        #messages > li {
+            padding: 0.5rem 1rem;
+        }
+
+        #messages > li:nth-child(odd) {
+            background: #191919;
+        }
     </style>
 </head>
 <body>
-<ul id="messages"></ul>
-<form id="form" action="">
-    <input id="input" autocomplete="off" /><button>Send</button>
-</form>
-<script src="/socket.io/socket.io.js"></script>
 
+    <div class="main">
+        <div class="title"> deck optimmizer <sup>beta</sup> </div>
+        <div class="helpTxt">
+            First, share the deck with<br>
+            deck-optimmizer@deck-optimmizer.iam.gserviceaccount.com<br><br>
+
+            Then, enter the ID in the field below and hit 'Optimize'.
+        </div>
+
+        <form class='form' id="form" action="">
+            <input id="input" autocomplete="off" />
+            <button class="optimize">Optimize</button>
+        </form>
+        <ul id="messages">
+            <li>Progress</li>
+<!--            <li>1JRhJixy6U5JlzkgsVe-XP7K6zXClXSo1wm2gDW5_UVE</li>-->
+<!--            <li>Copied source slides to new presentation with ID: 16O0oocYc1_VKArKmNIN2JCwvF8eogCJAtKBVbst-kKA</li>-->
+<!--            <li>Found images in slides:3</li>-->
+<!--            <li>Image #1 of 3, ID: g124586d1df0_0_11, URL:-->
+<!--                https://lh6.googleusercontent.com/cPpaI-2rELUO3aBeEZRpO_UEuNvhAybBHqykFNWnxIGPkTA-4e4OQusnUlOChi6pte0eTQim5YwGoms4Dz3wdbPerI23Rzn9o92coJzfkPkTyLMD_1a9z4JXIyzsffXnVT7ZuYRenda2QfdyjR52TA-->
+<!--            </li>-->
+<!--            <li>Source Image Filesize: 2.22 MB</li>-->
+<!--            <li>Output Image Filesize: 2.22 MB, Optimization: 38%</li>-->
+<!--            <li>Uploaded Output to S3</li>-->
+<!--            <li>Replaced URL in Google Slide</li>-->
+<!--            <li>Image #2 of 3, ID: g124586d1df0_0_12, URL:-->
+<!--                https://lh6.googleusercontent.com/jFIomu-1cyi8LvvKBR5UzJOh42InSw_o-TUj8vX4v2UkuObGQWdtUkfJev7x3-H_gArfR0kX9yagim0uUtu6f-pTr7OeA-8tvTAkF7qliV6IYizWU2YVZ3ctFqoU3KH4TOiNZkaeOo92Lw_whCmbiw-->
+<!--            </li>-->
+<!--            <li>Source Image Filesize: 1.22 MB</li>-->
+<!--            <li>Output Image Filesize: 1.22 MB, Optimization: 40%</li>-->
+<!--            <li>Uploaded Output to S3</li>-->
+<!--            <li>Replaced URL in Google Slide</li>-->
+<!--            <li>Image #3 of 3, ID: g124586d1df0_0_13, URL:-->
+<!--                https://lh6.googleusercontent.com/FohbWios4fH0lH6NWfQTpSvuIqa9JdszOIrZc0N04dSzRnYJOZJbqVuPdzgJivmy4kvpNcBiA17t69MGSCWqZtiMJvl3XPVvtJa_ouMz4TAE3Ya5rJVKvaFsdxTBlx3zb8Z_z5hD6JpP3OJx7Vwf-A-->
+<!--            </li>-->
+<!--            <li>Source Image Filesize: 725.31 KB</li>-->
+<!--            <li>Output Image Filesize: 725.31 KB, Optimization: 33%</li>-->
+<!--            <li>Uploaded Output to S3</li>-->
+<!--            <li>Replaced URL in Google Slide</li>-->
+<!--            <li>Done. New Presentation URL:</li>-->
+<!--            <li><a target="_blank"-->
+<!--                   href="https://docs.google.com/presentation/d/16O0oocYc1_VKArKmNIN2JCwvF8eogCJAtKBVbst-kKA">https://docs.google.com/presentation/d/16O0oocYc1_VKArKmNIN2JCwvF8eogCJAtKBVbst-kKA</a>-->
+<!--            </li>-->
+        </ul>
+    </div>
+
+<script src="/socket.io/socket.io.js"></script>
 <script>
     var socket = io();
 
@@ -30,6 +125,11 @@
     var input = document.getElementById('input');
 
     form.addEventListener('submit', function(e) {
+
+        document.querySelector('.form').remove();
+        document.querySelector('.helpTxt').remove();
+        document.querySelector('#messages').style.display='block';
+
         e.preventDefault();
         if (input.value) {
             socket.emit('presentationId', input.value);
@@ -39,7 +139,7 @@
 
     socket.on('update message', function(msg) {
         var item = document.createElement('li');
-        item.textContent = msg.data;
+        item.innerHTML = msg.data;
         messages.appendChild(item);
         window.scrollTo(0, document.body.scrollHeight);
         console.log(msg.data)
