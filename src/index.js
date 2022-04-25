@@ -54,7 +54,7 @@ io.on('connection', async (socket) => {
     });
 });
 
-async function optimizeGifsInPresentation(presentationId, socket) {
+async function optimizeGifsInPresentation(url, socket) {
 
     // get credentials, create if they don't exist
     const credentials = await getCredentials('./creds.json');
@@ -63,6 +63,7 @@ async function optimizeGifsInPresentation(presentationId, socket) {
     const slidesOptimizer = new GoogleSlidesOptimizer(credentials);
 
     // copy source slides to new slides
+    const presentationId = slidesOptimizer.getSlideIdFromUrl(url);
     const newSlides = await slidesOptimizer.copySlides(presentationId)
 
     // log URL to new slides
