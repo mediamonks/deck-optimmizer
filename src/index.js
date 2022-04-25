@@ -2,20 +2,41 @@
 const app = require('express')();
 const http = require('http').Server(app);
 const io = require('socket.io')(http);
-const port = process.env.PORT || 3000;
+const util = require("util");
+const fs = require("fs-extra");
+
+const GoogleSlidesOptimizer = require("./util/GoogleSlidesImageOptimizer");
 
 const getCredentials = require("./util/getCredentials");
-const {google} = require("googleapis");
-const copyGoogleSlides = require("./util/copyGoogleSlides");
 const downloadImageToDisk = require("./util/downloadImageToDisk");
-const fs = require("fs-extra");
-const filetype = require("file-type-cjs");
 const formatSizeUnits = require("./util/formatSizeUnits");
 const optimizeGif = require("./util/optimizeGif");
-const uploadImageToS3 = require("./util/uploadImageToS3");
-const replaceImageInGoogleSlides = require("./util/replaceImageInGoogleSlides");
+const checkIfGif = require("./util/checkIfGif");
 
-const credsFilePath = './creds.json';
+const port = process.env.PORT || 3000;
+const log_stdout = process.stdout;
+//const log_file = fs.createWriteStream(__dirname + '/debug.log', {flags : 'w'});
+const toHref = (url, label) => '<a target="_blank" href="'+url+'">' + (label || url) + '</a>';
+
+(async () => {
+    console.log('Checking Credentials')
+    const credentials = await getCredentials('./creds.json');
+
+    http.listen(port, () => {
+        console.log(`Deck Optimmizer - Server running at http://localhost:${port}/`);
+    });
+
+})();
+
+
+
+
+console.log = function(d, socket) { //
+    //log_file.write(util.format(d) + '\n');
+    log_stdout.write(util.format(d) + '\n');
+    if (socket) socket.emit('update message', { data: d});
+};
+
 
 app.get('/', (req, res) => {
     res.sendFile(__dirname + '/index.html');
@@ -26,105 +47,73 @@ io.on('connection', async (socket) => {
     console.log('Client Connected')
 
     socket.on('presentationId', async msg => {
+        console.log(msg, socket)
         try {
-
             const presentation = await optimizeGifsInPresentation(msg, socket);
-
-        } catch (e) {
-
-        }
+        } catch (e) {  }
     });
 });
 
-const findAllImages = slidesData => {
-    const imagesArray = [];
-    slidesData.data.slides.forEach(slide => {
-        if (slide.hasOwnProperty('pageElements')) {
-            slide.pageElements.forEach(pageElement => {
-                if (pageElement.image) imagesArray.push(pageElement);
-            });
-        }
-    })
+async function optimizeGifsInPresentation(presentationId, socket) {
 
-    return imagesArray;
-}
+    // get credentials, create if they don't exist
+    const credentials = await getCredentials('./creds.json');
 
-const logme = (string, socket) => {
-    console.log(string);
-    socket.emit('update message', { data: string});
-}
+    // create new instance of class
+    const slidesOptimizer = new GoogleSlidesOptimizer(credentials);
 
-const optimizeGifsInPresentation = async (sourcePresentationId, socket) => {
-    // get necessary credentials
-    const credentials = await getCredentials(credsFilePath);
+    // copy source slides to new slides
+    const newSlides = await slidesOptimizer.copySlides(presentationId)
 
-    const auth = new google.auth.GoogleAuth({
-        credentials: credentials.google,
-        scopes: [
-            'https://www.googleapis.com/auth/presentations',
-            'https://www.googleapis.com/auth/drive'
-        ],
-    });
+    // log URL to new slides
+    console.log('Copied source slides to new presentation with ID: ' + newSlides.id, socket)
 
-    // copy existing google slides
-    logme('copying: ' + sourcePresentationId, socket)
-    const optimizedPresentation = await copyGoogleSlides(sourcePresentationId, auth); //returns new presentation
+    // get all slides data
+    const slidesData = await slidesOptimizer.getSlides(newSlides.id);
 
-    logme('new presentation: ' + optimizedPresentation.data.presentationId, socket)
+    // fish out all the images in slides data
+    const imageElements = slidesOptimizer.getImageElements(slidesData);
+    console.log('Found images in slides:' + imageElements.length, socket);
 
+    for (const [index, element] of imageElements.entries()) {
+        const sourceImagePath = './gif/source/'+element.objectId+'.gif';
+        const outputImagePath = './gif/output/'+element.objectId+'_optimized.gif';
 
-    // get all images from new google slides presentation
-    const imagesArray = findAllImages(optimizedPresentation);
-    logme('images array length: ' + imagesArray.length, socket);
+        // console.log('Image #' +(index+1)+ ' of '+ imageElements.length +', ID: ' + element.objectId + ', URL: ' + element.image.contentUrl, socket);
+        console.log('Image #' +(index+1)+ ' of '+ imageElements.length +', ID: ' + toHref(element.image.contentUrl, element.objectId), socket);
 
-    // repeat this step for every image
-    for (const imageToReplace of imagesArray) {
-        logme('image to replace: ' + imageToReplace.objectId, socket);
+        // download image
+        await downloadImageToDisk(element.image.contentUrl, sourceImagePath);
 
-        const imageObjectId = imageToReplace.objectId;
-        const originalImageUrl = imageToReplace.image.contentUrl;
-        const tempImagePath = './gif/source/'+imageObjectId+'.gif';
-        const newImagePath = './gif/output/'+imageObjectId+'.gif';
+        //check if image is gif
+        const isGif = await checkIfGif(sourceImagePath);
+        if (!isGif) continue;
 
-        // download the gif and save to disk
-        await downloadImageToDisk(originalImageUrl, tempImagePath)
+        //log current filesize
+        const sourceImageStats = fs.statSync(sourceImagePath);
+        console.log('Source Image Filesize: ' + formatSizeUnits(sourceImageStats.size), socket);
 
-        //check if gif!
-        const fileBuffer = await fs.readFileSync(tempImagePath);
-        const fileType = await filetype.fromBuffer(fileBuffer);
-        if (fileType.ext !== 'gif') continue; // skip this iteration if it's not a gif
+        //optimize
+        await optimizeGif(sourceImagePath, outputImagePath, 200);
 
-        // log original filesize
-        const fileStats = fs.statSync(tempImagePath);
-        logme('original file size: ' + formatSizeUnits(fileStats.size), socket);
-
-        // optimize gif
-        await optimizeGif(tempImagePath, newImagePath, 200);
-
-        // log new filesize & optimization %
-        const newFileStats = fs.statSync(newImagePath);
-        const optimizationPercentage = 100 - ((newFileStats.size / fileStats.size)*100);
-        logme('new file size: ' + formatSizeUnits(newFileStats.size) + ', optimization: ' + Math.round(optimizationPercentage) + "%", socket);
+        //log optimized filesize
+        const outputImageStats = fs.statSync(outputImagePath);
+        const optimizationPercentage = 100 - ((outputImageStats.size / sourceImageStats.size)*100);
+        console.log('Output Image Filesize: ' + formatSizeUnits(sourceImageStats.size) + ', Optimization: ' + Math.round(optimizationPercentage) + "%", socket);
 
         // check if optimization is more than threshold
         if (optimizationPercentage < 5) continue;
 
-        // upload gif to s3 bucket
-        const newImageUrl = await uploadImageToS3(newImagePath, credentials.aws.accessKeyId, credentials.aws.secretAccessKey, credentials.aws.bucket)
-        logme('new image url: ' + newImageUrl, socket);
+        //upload via s3
+        const uploadedGifUrl = await slidesOptimizer.uploadFileToS3(outputImagePath);
+        console.log('Uploaded Output to S3', socket)
 
-        //replace image URL in google slide
-        await replaceImageInGoogleSlides(optimizedPresentation.data.presentationId, imageObjectId, newImageUrl, auth);
+        //replace url in google slides
+        await slidesOptimizer.replaceImageUrl(newSlides.id, element.objectId, uploadedGifUrl)
+        console.log('Replaced URL in Google Slide', socket)
     }
 
-    logme('https://docs.google.com/presentation/d/' + optimizedPresentation.data.presentationId, socket);
-    //res.send('https://docs.google.com/presentation/d/' + optimizedPresentation.data.presentationId);
-
-    return optimizedPresentation;
+    // log that it's done
+    console.log("Done. New Presentation URL:<br>" + toHref('https://docs.google.com/presentation/d/' + newSlides.id), socket)
 }
-
-
-http.listen(port, () => {
-    console.log(`Socket.IO server running at http://localhost:${port}/`);
-});
 

@@ -1,5 +1,0 @@
-(async () => {
-    console.log('Hola')
-})();
-
-
