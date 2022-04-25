@@ -29,6 +29,12 @@ class GoogleSlidesOptimizer {
         return await this.slidesService.presentations.get({presentationId});
     }
 
+    getSlideIdFromUrl(url) {
+        let [_, url2] = url.split('https://docs.google.com/presentation/d/');
+        let [id] = url2.split('/');
+        return id;
+    }
+
     async copySlides(presentationId) {
         const originalFile = await this.slidesService.presentations.get({presentationId});
         const newName = "Optimized copy of " + originalFile.data.title;
