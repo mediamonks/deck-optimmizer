@@ -36,37 +36,44 @@ class GoogleSlidesOptimizer {
     }
 
     async copySlides(presentationId) {
-        const originalFile = await this.slidesService.presentations.get({presentationId});
-        const newName = "Optimized copy of " + originalFile.data.title;
+        try {
+            const originalFile = await this.slidesService.presentations.get({presentationId});
 
-        const newFile = await new Promise((resolve) => {
-            this.driveService.files.copy({
-                fileId: presentationId,
-                supportsAllDrives: true,
-                resource: {
-                    name: newName,
-                },
-            }, (err, driveResponse) => {
-                if (err) console.log(err)
-                resolve(driveResponse.data);
+            const newName = "Optimized copy of " + originalFile.data.title;
+
+            const newFile = await new Promise((resolve) => {
+                this.driveService.files.copy({
+                    fileId: presentationId,
+                    supportsAllDrives: true,
+                    resource: {
+                        name: newName,
+                    },
+                }, (err, driveResponse) => {
+                    if (err) console.log(err)
+                    resolve(driveResponse.data);
+                });
             });
-        });
 
-        const permission = { type: 'anyone', kind: 'drive#permission', role: 'writer' }
+            const permission = { type: 'anyone', kind: 'drive#permission', role: 'writer' }
 
-        await new Promise((resolve) => {
-            this.driveService.permissions.create({
-                fileId: newFile.id,
-                supportsAllDrives: true,
-                resource: permission,
-            }, (err, driveResponse) => {
-                if (err) console.log(err)
-                resolve(driveResponse.data);
-            });
-        })
+            await new Promise((resolve) => {
+                this.driveService.permissions.create({
+                    fileId: newFile.id,
+                    supportsAllDrives: true,
+                    resource: permission,
+                }, (err, driveResponse) => {
+                    if (err) console.log(err)
+                    resolve(driveResponse.data);
+                });
+            })
+
+            return newFile;
+
+        } catch (e) {
+            console.log(e)
+        }
 
 
-        return newFile;
 
     }
 

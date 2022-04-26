@@ -1,9 +1,12 @@
-const fs = require("fs-extra");
-const filetype = require("file-type-cjs");
+const axios = require('axios');
+const fs = require('fs');
+const mime = require('mime');
 
-module.exports = async (filePath) => {
-    const fileBuffer = await fs.readFileSync(filePath);
-    const fileType = await filetype.fromBuffer(fileBuffer);
-    return fileType.ext === 'gif'
+module.exports = async (url) => {
+    let resp = await axios.get(url, {
+        responseType: 'stream'
+    });
+    const contentType = resp.headers['content-type'];
+    return mime.extension(contentType) === 'gif';
 }
 
