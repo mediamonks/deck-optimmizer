@@ -66,12 +66,22 @@
         #messages > li:nth-child(odd) {
             background: #191919;
         }
+
+        .footer {
+            position: absolute;
+            bottom: 5px;
+            right: 5px;
+            font-size: 8px;
+            text-align: right;
+        }
     </style>
 </head>
 <body>
 
+    <div class="footer">deck optimmizer beta v0.1 <a target="_blank" href="https://github.com/mirkovw/deck-optimmizer">source</a></div>
     <div class="main">
-        <div class="title"> deck optimmizer <sup>beta</sup> </div>
+
+        <div class="title"> deck optimmizer <sup class="beta">beta</sup> </div>
         <div class="helpTxt">
             First, share the deck with<br>
             deck-optimmizer@deck-optimmizer.iam.gserviceaccount.com<br><br>
@@ -136,6 +146,8 @@
             input.value = '';
         }
     });
+
+
 
     socket.on('update message', function(msg) {
         var item = document.createElement('li');
