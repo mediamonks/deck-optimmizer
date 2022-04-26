@@ -84,7 +84,7 @@
             <button class="optimize">Optimize</button>
         </form>
         <ul id="messages">
-            <li>Progress</li>
+<!--            <li>Progress</li>-->
 <!--            <li>1JRhJixy6U5JlzkgsVe-XP7K6zXClXSo1wm2gDW5_UVE</li>-->
 <!--            <li>Copied source slides to new presentation with ID: 16O0oocYc1_VKArKmNIN2JCwvF8eogCJAtKBVbst-kKA</li>-->
 <!--            <li>Found images in slides:3</li>-->
@@ -140,7 +140,9 @@
     socket.on('update message', function(msg) {
         var item = document.createElement('li');
         item.innerHTML = msg.data;
-        messages.appendChild(item);
+        //messages.appendChild(item);
+        messages.insertBefore(item, messages.firstChild);
+
         window.scrollTo(0, document.body.scrollHeight);
         console.log(msg.data)
     });
