@@ -1,6 +1,6 @@
 {
   "name": "deck-optimmizer",
-  "version": "0.1",
+  "version": "0.11",
   "description": "",
   "main": "./src/index.js",
   "scripts": {
