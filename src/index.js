@@ -139,6 +139,7 @@ async function optimizeGifsInPresentation(url, socket) {
 
     let optimizeGifPromiseArray = [];
     let sourceSize = 0, outputSize = 0;
+
     for (const [index, element] of gifElements.entries()) {
 
         optimizeGifPromiseArray.push(new Promise(async (resolve) => {
@@ -158,7 +159,29 @@ async function optimizeGifsInPresentation(url, socket) {
             sourceSize += sourceImageStats.size;
 
             //optimize
-            await optimizeGif(sourceImagePath, outputImagePath, 200);
+
+            // determine if crop needs to happen
+            let cropLine = '';
+
+            if (element.image.imageProperties.cropProperties) {
+                const cropProps = {
+                    leftOffset: 0,
+                    rightOffset: 0,
+                    topOffset: 0,
+                    bottomOffset: 0,
+                    ...element.image.imageProperties.cropProperties
+                };
+
+                const imgWidth = element.size.width.magnitude / 25;
+                const imgHeight = element.size.height.magnitude / 25;
+                const cropX1 = Math.round(cropProps.leftOffset * imgWidth);
+                const cropY1 = Math.round(cropProps.topOffset * imgHeight);
+                const cropX2 = Math.round(imgWidth - (cropProps.rightOffset * imgWidth));
+                const cropY2 = Math.round(imgHeight - (cropProps.bottomOffset * imgHeight));
+                cropLine = cropX1+','+cropY1+'-'+cropX2+','+cropY2;
+            }
+
+            await optimizeGif(sourceImagePath, outputImagePath, 200, cropLine);
 
             await fs.unlinkSync(sourceImagePath);
 
@@ -187,8 +210,7 @@ async function optimizeGifsInPresentation(url, socket) {
         }))
     }
 
-
-
+    
     await Promise.all(optimizeGifPromiseArray);
 
     console.log(sourceSize )

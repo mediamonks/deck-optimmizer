@@ -111,13 +111,45 @@ class GoogleSlidesOptimizer {
     }
 
     async replaceImageUrl(presentationId, imageObjectId, newImageUrl) {
-        const imageReplaceMethod = 'CENTER_INSIDE';
+        const imageReplaceMethod = 'CENTER_CROP'; // CENTER_INSIDE or CENTER_CROP
+
         // replace image URL in slides
         let requests = [{
             replaceImage: {
                 imageObjectId: imageObjectId,
                 imageReplaceMethod: imageReplaceMethod,
                 url: newImageUrl
+            }
+        }];
+
+        return await new Promise(resolve => {
+            try {
+                this.slidesService.presentations.batchUpdate({
+                    presentationId,
+                    resource: {requests},
+                }, (err, response) => {
+                    if (err) {
+                        throw err;
+                    }
+
+                    resolve(response);
+                });
+            } catch (e) {
+                console.log(e);
+            }
+        })
+    }
+
+    async updateImageProperties(presentationId, imageObjectId, imagePropertiesObj) {
+
+        console.log('updating image properties!')
+        console.log(imagePropertiesObj);
+
+        let requests = [{
+            updateImageProperties: {
+                objectId: imageObjectId,
+                imageProperties: imagePropertiesObj,
+                fields: 'cropProperties'
             }
         }];
 
