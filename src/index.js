@@ -6,7 +6,7 @@ const util = require("util");
 const fs = require("fs-extra");
 const axios = require('axios');
 const mime = require('mime');
-
+const sizeOf = util.promisify(require('image-size'))
 
 const GoogleSlidesOptimizer = require("./util/GoogleSlidesImageOptimizer");
 
@@ -31,15 +31,10 @@ const toHref = (url, label) => '<a target="_blank" href="'+url+'">' + (label || 
 
 })();
 
-
-
-
 console.log = function(d, socket) { //
-    //log_file.write(util.format(d) + '\n');
     log_stdout.write(util.format(d) + '\n');
     if (socket) socket.emit('update message', { data: d});
 };
-
 
 app.get('/', (req, res) => {
     res.sendFile(__dirname + '/index.html');
@@ -51,8 +46,6 @@ io.on('connection', async (socket) => {
 
     socket.on('presentationId', async msg => {
         console.log(msg, socket)
-
-
 
         try {
             const presentation = await optimizeGifsInPresentation(msg, socket);
@@ -76,6 +69,7 @@ async function optimizeGifsInPresentation(url, socket) {
 
     // log URL to new slides
     console.log('Copied source slides to new presentation with ID: ' + newSlides.id, socket)
+    console.log('New Slide ')
 
     // get all slides data
     const slidesData = await slidesOptimizer.getSlides(newSlides.id);
@@ -83,8 +77,6 @@ async function optimizeGifsInPresentation(url, socket) {
     // fish out all the images in slides data
     const imageElements = slidesOptimizer.getImageElements(slidesData);
     console.log('Found images in slides:' + imageElements.length, socket);
-
-
 
     let gifElements = [];
     let checkIfGifPromiseArray = [];
@@ -103,40 +95,6 @@ async function optimizeGifsInPresentation(url, socket) {
     await Promise.all(checkIfGifPromiseArray);
     console.log('Found GIF images in slides:' + gifElements.length, socket);
 
-    // for (const [index, element] of gifElements.entries()) {
-    //     const sourceImagePath = './gif/source/'+element.objectId+'.gif';
-    //     const outputImagePath = './gif/output/'+element.objectId+'_optimized.gif';
-    //
-    //     // console.log('Image #' +(index+1)+ ' of '+ imageElements.length +', ID: ' + element.objectId + ', URL: ' + element.image.contentUrl, socket);
-    //     console.log('Image #' +(index+1)+ ' of '+ gifElements.length +', ID: ' + toHref(element.image.contentUrl, element.objectId), socket);
-    //
-    //     // download image
-    //     await downloadImageToDisk(element.image.contentUrl, sourceImagePath);
-    //
-    //     //log current filesize
-    //     const sourceImageStats = fs.statSync(sourceImagePath);
-    //     console.log('Source Image Filesize: ' + formatSizeUnits(sourceImageStats.size), socket);
-    //
-    //     //optimize
-    //     await optimizeGif(sourceImagePath, outputImagePath, 200);
-    //
-    //     //log optimized filesize
-    //     const outputImageStats = fs.statSync(outputImagePath);
-    //     const optimizationPercentage = 100 - ((outputImageStats.size / sourceImageStats.size)*100);
-    //     console.log('Output Image Filesize: ' + formatSizeUnits(outputImageStats.size) + ', Optimization: ' + Math.round(optimizationPercentage) + "%", socket);
-    //
-    //     // check if optimization is more than threshold
-    //     if (optimizationPercentage < 5) continue;
-    //
-    //     //upload via s3
-    //     const uploadedGifUrl = await slidesOptimizer.uploadFileToS3(outputImagePath);
-    //     console.log('Uploaded Output to S3', socket)
-    //
-    //     //replace url in google slides
-    //     await slidesOptimizer.replaceImageUrl(newSlides.id, element.objectId, uploadedGifUrl)
-    //     console.log('Replaced URL in Google Slide', socket)
-    // }
-
     let optimizeGifPromiseArray = [];
     let sourceSize = 0, outputSize = 0;
 
@@ -147,75 +105,89 @@ async function optimizeGifsInPresentation(url, socket) {
             const sourceImagePath = './gif/source/'+element.objectId+'.gif';
             const outputImagePath = './gif/output/'+element.objectId+'_optimized.gif';
 
-            // console.log('Image #' +(index+1)+ ' of '+ imageElements.length +', ID: ' + element.objectId + ', URL: ' + element.image.contentUrl, socket);
-            //console.log('Image #' +(index+1)+ ' of '+ gifElements.length +', ID: ' + toHref(element.image.contentUrl, element.objectId), socket);
-
             // download image
             await downloadImageToDisk(element.image.contentUrl, sourceImagePath);
 
             //log current filesize
             const sourceImageStats = fs.statSync(sourceImagePath);
-            //console.log('Source Image Filesize: ' + formatSizeUnits(sourceImageStats.size), socket);
             sourceSize += sourceImageStats.size;
 
-            //optimize
+            //check image dimensions
+            const imgDimensions = await sizeOf(sourceImagePath);
+            const imgWidth = imgDimensions.width;
+            const imgHeight = imgDimensions.height;
+            console.log('source image dimensions: '+imgWidth + 'x' + imgHeight)
 
-            // determine if crop needs to happen
+            // set "trueScale", name I came up with for the actual scale when a image is 1:1 pixels in fullscreen presenting mode
+            const trueScaleX = 190.5; // 381/2 and 381x25 = 9525
+            const trueScaleY = 190.5;
+
+            // determine what resolution the image is actually rendered at in the slide
+            let renderedImgWidth = ((element.size.width.magnitude / 25) * element.transform.scaleX) / trueScaleX;
+            let renderedImgHeight = ((element.size.height.magnitude / 25) * element.transform.scaleY) / trueScaleY;
+            console.log('rendered image dimensions: '+ Math.round(renderedImgWidth) + 'x' + Math.round(renderedImgHeight))
+
+            // declare resize/crop string to pass in the optimizeGif function
+            let resizeLine = '';
             let cropLine = '';
 
-            if (element.image.imageProperties.cropProperties) {
+            //determine if resizing of the image is required (when a image is placed at 0.95 scale or lower)
+            if (renderedImgWidth / imgWidth < 0.95 || renderedImgHeight / imgHeight < 0.95) {
+                resizeLine = Math.round(renderedImgWidth) + 'x' +  Math.round(renderedImgHeight);
+            }
+
+            // determine if cropping is required
+            if (element.image.imageProperties.hasOwnProperty('cropProperties')) {
+                console.log('found image with custom crop');
+
                 const cropProps = {
-                    leftOffset: 0,
-                    rightOffset: 0,
-                    topOffset: 0,
-                    bottomOffset: 0,
-                    ...element.image.imageProperties.cropProperties
+                    leftOffset: 0, rightOffset: 0, topOffset: 0, bottomOffset: 0, // make sure all required props are in the object
+                    ...element.image.imageProperties.cropProperties // overwrite if necessary with props from google's object
                 };
 
-                const imgWidth = element.size.width.magnitude / 25;
-                const imgHeight = element.size.height.magnitude / 25;
+                // construct the cropLine to pass in the optimizeGif function
                 const cropX1 = Math.round(cropProps.leftOffset * imgWidth);
                 const cropY1 = Math.round(cropProps.topOffset * imgHeight);
                 const cropX2 = Math.round(imgWidth - (cropProps.rightOffset * imgWidth));
                 const cropY2 = Math.round(imgHeight - (cropProps.bottomOffset * imgHeight));
                 cropLine = cropX1+','+cropY1+'-'+cropX2+','+cropY2;
+
+                // additional check to see if resize is actually needed by calculating the full rendered image dimensions, without crop
+                const fullWidth = (renderedImgWidth / ((1 - (cropProps.leftOffset + cropProps.rightOffset)) * 100)) * 100;
+                const fullHeight = (renderedImgHeight / ((1 - (cropProps.topOffset + cropProps.bottomOffset)) * 100)) * 100;
+                console.log('rendered image dimensions without crop: ' + Math.round(fullWidth) + 'x' + Math.round(fullHeight))
+
+                if (fullWidth / imgWidth < 0.95 || fullHeight / imgHeight < 0.95) {
+
+                } else {
+                    console.log('no resize required. uncropped image is not actually scaled down.')
+                    resizeLine = '';
+                }
             }
 
-            await optimizeGif(sourceImagePath, outputImagePath, 200, cropLine);
-
+            //optimize gif and remove source image after its done
+            await optimizeGif(sourceImagePath, outputImagePath, 200, cropLine, resizeLine);
             await fs.unlinkSync(sourceImagePath);
 
             //log optimized filesize
             const outputImageStats = fs.statSync(outputImagePath);
             const optimizationPercentage = 100 - ((outputImageStats.size / sourceImageStats.size)*100);
             outputSize += outputImageStats.size;
-            //console.log('Output Image Filesize: ' + formatSizeUnits(outputImageStats.size) + ', Optimization: ' + Math.round(optimizationPercentage) + "%", socket);
 
-            // check if optimization is more than threshold
-            //if (optimizationPercentage < 5) continue;
-
-            //upload via s3
+            //upload via s3 and remove output image after its done
             const uploadedGifUrl = await slidesOptimizer.uploadFileToS3(outputImagePath);
-            //console.log('Uploaded Output to S3', socket)
-
             await fs.unlinkSync(outputImagePath);
 
             //replace url in google slides
             await slidesOptimizer.replaceImageUrl(newSlides.id, element.objectId, uploadedGifUrl)
-            //console.log('Replaced URL in Google Slide', socket)
 
             console.log('#' +(index+1)+ ' of '+ gifElements.length +', Input: ' + formatSizeUnits(sourceImageStats.size) + ', Output: ' + formatSizeUnits(outputImageStats.size) + ', Optimization: ' + Math.round(optimizationPercentage) + "%, " + toHref(uploadedGifUrl, 'Link'), socket);
-
             resolve();
         }))
     }
 
-    
     await Promise.all(optimizeGifPromiseArray);
 
-    console.log(sourceSize )
-    console.log(outputSize)
-    //const optimizationAmount =
     // log that it's done
     console.log('Done. Total optimization: ' + formatSizeUnits(sourceSize - outputSize), socket);
     console.log("New Presentation URL:<br>" + toHref('https://docs.google.com/presentation/d/' + newSlides.id), socket)
