@@ -1,15 +1,22 @@
 {
   "name": "deck-optimmizer",
-  "version": "0.11",
-  "description": "",
+  "version": "0.2",
+  "description": "Node.js server application that downloads, optimizes and replaces all GIF files in a given Google Slides presentation.",
   "main": "./src/index.js",
   "scripts": {
-    "dev": "node src/index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node src/index.js"
   },
   "keywords": [],
-  "author": "",
+  "author": "Mirko van Willigenburg",
   "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mediamonks/deck-optimmizer/"
+  },
+  "bugs": {
+    "type": "git",
+    "url": "https://github.com/mediamonks/deck-optimmizer/issues"
+  },
   "dependencies": {
     "aws-sdk": "^2.1117.0",
     "axios": "^0.26.1",
@@ -19,6 +26,7 @@
     "fs-extra": "^10.1.0",
     "gifsicle": "^5.3.0",
     "googleapis": "^100.0.0",
+    "image-size": "^1.0.1",
     "inquirer": "^8.2.2",
     "open": "^8.4.0",
     "server-destroy": "^1.0.1",
