@@ -150,7 +150,24 @@
         }
     });
 
+    // TODO: fix source gifs do not display
+    socket.on('DisplayGif', function(msg) {
+        var targetArea = document.getElementById(msg.target);
+        var item = document.createElement('li');
+        var gif = document.createElement('img');
+        
+        gif.src = msg.path;
+        item.appendChild(gif);
+        targetArea.appendChild(item);
+    });
 
+    // TODO: fix this function - not getting triggered?
+    socket.on('Expand'), function() {
+        var targetArea = document.getElementById("controls"); 
+        var item = document.createElement('li');
+        item.id = 'spacer';
+        targetArea.appendChild(item);
+    };
 
     socket.on('update message', function(msg) {
         var item = document.createElement('li');
