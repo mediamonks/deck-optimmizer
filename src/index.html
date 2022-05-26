@@ -74,6 +74,25 @@
             font-size: 8px;
             text-align: right;
         }
+
+        #sourceGifs, #controls, #outputGifs{
+            list-style-type: none;
+            margin: 0;
+            padding: 0;
+            padding-top: 10px;
+            width: 33%;
+            float: left;
+        }
+
+        #sourceGifs > li, #controls > li, #outputGifs > li, #spacer {
+            padding: 0.5rem 1rem;
+            height: 33%;
+        }
+
+        #sourceGifs > li:nth-child(odd), #controls > li:nth-child(odd), #outputGifs > li:nth-child(odd), #spacer {
+            background: #191919;
+        }
+
     </style>
 </head>
 <body>
@@ -93,37 +112,21 @@
             <input id="input" autocomplete="off" />
             <button class="optimize">Optimize</button>
         </form>
+
         <ul id="messages">
-<!--            <li>Progress</li>-->
-<!--            <li>1JRhJixy6U5JlzkgsVe-XP7K6zXClXSo1wm2gDW5_UVE</li>-->
-<!--            <li>Copied source slides to new presentation with ID: 16O0oocYc1_VKArKmNIN2JCwvF8eogCJAtKBVbst-kKA</li>-->
-<!--            <li>Found images in slides:3</li>-->
-<!--            <li>Image #1 of 3, ID: g124586d1df0_0_11, URL:-->
-<!--                https://lh6.googleusercontent.com/cPpaI-2rELUO3aBeEZRpO_UEuNvhAybBHqykFNWnxIGPkTA-4e4OQusnUlOChi6pte0eTQim5YwGoms4Dz3wdbPerI23Rzn9o92coJzfkPkTyLMD_1a9z4JXIyzsffXnVT7ZuYRenda2QfdyjR52TA-->
-<!--            </li>-->
-<!--            <li>Source Image Filesize: 2.22 MB</li>-->
-<!--            <li>Output Image Filesize: 2.22 MB, Optimization: 38%</li>-->
-<!--            <li>Uploaded Output to S3</li>-->
-<!--            <li>Replaced URL in Google Slide</li>-->
-<!--            <li>Image #2 of 3, ID: g124586d1df0_0_12, URL:-->
-<!--                https://lh6.googleusercontent.com/jFIomu-1cyi8LvvKBR5UzJOh42InSw_o-TUj8vX4v2UkuObGQWdtUkfJev7x3-H_gArfR0kX9yagim0uUtu6f-pTr7OeA-8tvTAkF7qliV6IYizWU2YVZ3ctFqoU3KH4TOiNZkaeOo92Lw_whCmbiw-->
-<!--            </li>-->
-<!--            <li>Source Image Filesize: 1.22 MB</li>-->
-<!--            <li>Output Image Filesize: 1.22 MB, Optimization: 40%</li>-->
-<!--            <li>Uploaded Output to S3</li>-->
-<!--            <li>Replaced URL in Google Slide</li>-->
-<!--            <li>Image #3 of 3, ID: g124586d1df0_0_13, URL:-->
-<!--                https://lh6.googleusercontent.com/FohbWios4fH0lH6NWfQTpSvuIqa9JdszOIrZc0N04dSzRnYJOZJbqVuPdzgJivmy4kvpNcBiA17t69MGSCWqZtiMJvl3XPVvtJa_ouMz4TAE3Ya5rJVKvaFsdxTBlx3zb8Z_z5hD6JpP3OJx7Vwf-A-->
-<!--            </li>-->
-<!--            <li>Source Image Filesize: 725.31 KB</li>-->
-<!--            <li>Output Image Filesize: 725.31 KB, Optimization: 33%</li>-->
-<!--            <li>Uploaded Output to S3</li>-->
-<!--            <li>Replaced URL in Google Slide</li>-->
-<!--            <li>Done. New Presentation URL:</li>-->
-<!--            <li><a target="_blank"-->
-<!--                   href="https://docs.google.com/presentation/d/16O0oocYc1_VKArKmNIN2JCwvF8eogCJAtKBVbst-kKA">https://docs.google.com/presentation/d/16O0oocYc1_VKArKmNIN2JCwvF8eogCJAtKBVbst-kKA</a>-->
-<!--            </li>-->
         </ul>
+
+        <br>
+        <div id="optimizePanel">
+            <ul id="sourceGifs">
+            </ul>
+            <ul id="controls">
+            </ul>
+            <ul id="outputGifs">
+            </ul>
+        </div>
+        
+
     </div>
 
 <script src="/socket.io/socket.io.js"></script>
