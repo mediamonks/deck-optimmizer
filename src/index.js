@@ -1,5 +1,6 @@
 // app.js
 const app = require('express')();
+express = require('express');
 const http = require('http').Server(app);
 const io = require('socket.io')(http);
 const util = require("util");
@@ -40,6 +41,7 @@ app.get('/', (req, res) => {
     res.sendFile(__dirname + '/index.html');
 });
 
+app.use(express.static(__dirname + '/public'));
 
 io.on('connection', async (socket) => {
     console.log('Client Connected')
