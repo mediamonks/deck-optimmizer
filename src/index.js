@@ -110,6 +110,9 @@ async function optimizeGifsInPresentation(url, socket) {
             // download image
             await downloadImageToDisk(element.image.contentUrl, sourceImagePath);
 
+            // Display source preview
+            if (socket) socket.emit('DisplayGif', { path: element.image.contentUrl, target:'sourceGifs'});
+
             //log current filesize
             const sourceImageStats = fs.statSync(sourceImagePath);
             sourceSize += sourceImageStats.size;
@@ -180,7 +183,6 @@ async function optimizeGifsInPresentation(url, socket) {
             const uploadedGifUrl = await slidesOptimizer.uploadFileToS3(outputImagePath);
             await fs.unlinkSync(outputImagePath);
 
-            if (socket) socket.emit('DisplayGif', { path: sourceImagePath, target:'sourceGifs'});
             if (socket) socket.emit('Expand', { empty: null });
             if (socket) socket.emit('DisplayGif', { path: uploadedGifUrl, target:'outputGifs'});
             //replace url in google slides
