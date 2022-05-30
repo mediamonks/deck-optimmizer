@@ -74,12 +74,20 @@
             }
         });
 
-        function DisplayManual() {
+        // TODO: Display only 1 preview source/output gif
+        function DisplayAuto() {
             document.querySelector('#optimizePanel').style.display = 'block';
             document.querySelector('#sourceGifs').style.display = 'block';
             document.querySelector('#controls').style.display = 'block';
             document.querySelector('#outputGifs').style.display = 'block';
         };
+
+        function DisplayManual() {
+            document.querySelector('#optimizePanel').style.display = 'block';
+            document.querySelector('#sourceGifs').style.display = 'block';
+            document.querySelector('#controls').style.display = 'block';
+            document.querySelector('#outputGifs').style.display = 'block';
+        }
 
         // TODO: fix source gifs do not display
         socket.on('DisplayGif', function (msg) {
@@ -92,13 +100,12 @@
             targetArea.appendChild(item);
         });
 
-        // TODO: fix this function - not getting triggered?
-        socket.on('Expand'), function () {
-            var targetArea = document.getElementById("controls");
+        socket.on('Expand', function (msg) {
+            var targetArea = document.getElementById('controls');
             var item = document.createElement('li');
             item.id = 'spacer';
             targetArea.appendChild(item);
-        };
+        });
 
         socket.on('update message', function (msg) {
             var item = document.createElement('li');
