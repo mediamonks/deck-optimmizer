@@ -103,3 +103,7 @@ body {
 #spacer {
     background: #191919;
 }
+
+#optionsContainer {
+    display: none;
+}
