@@ -135,13 +135,6 @@
             targetArea.appendChild(ul);
         });
 
-        socket.on('Expand', function (msg) {
-            var targetArea = document.getElementById('controls');
-            var item = document.createElement('li');
-            item.id = 'spacer';
-            targetArea.appendChild(item);
-        });
-
         socket.on('update message', function (msg) {
             var item = document.createElement('li');
             item.innerHTML = msg.data;

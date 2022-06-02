@@ -184,7 +184,6 @@ async function optimizeGifsInPresentation(url, socket) {
             const uploadedGifUrl = await slidesOptimizer.uploadFileToS3(outputImagePath);
             await fs.unlinkSync(outputImagePath);
 
-            //if (socket) socket.emit('Expand', { empty: null });
             if (socket) socket.emit('DisplayGif', { source:sourceUrl, output: uploadedGifUrl});
             //replace url in google slides
             await slidesOptimizer.replaceImageUrl(newSlides.id, element.objectId, uploadedGifUrl)
