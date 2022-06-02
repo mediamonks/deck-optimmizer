@@ -40,16 +40,14 @@
 
         <br>
         <div id="optimizePanel">
-            <ul id="sourceGifs">
-            </ul>
-            <ul id="controls">
-            </ul>
-            <ul id="outputGifs">
-            </ul>
+            <ul>
+                <li>Original</li>
+                <li></li>
+                <li>Preview</li>
         </div>
 
         <div id="optionsContainer">
-            <form action="">
+            <form id="optionsForm" action="">
                 <label for="compressions">Compression type:</label>
                 <select name="compressions" id="compressionDD">
                     <option value="lossy">Lossy</option>
@@ -105,27 +103,36 @@
         // TODO: Display only 1 preview source/output gif
         function DisplayAuto() {
             document.querySelector('#optimizePanel').style.display = 'block';
-            document.querySelector('#sourceGifs').style.display = 'block';
-            document.querySelector('#controls').style.display = 'block';
-            document.querySelector('#outputGifs').style.display = 'block';
+            document.querySelector('#optionsContainer').style.display = 'block';
         };
 
         function DisplayManual() {
             document.querySelector('#optimizePanel').style.display = 'block';
-            document.querySelector('#sourceGifs').style.display = 'block';
-            document.querySelector('#controls').style.display = 'block';
-            document.querySelector('#outputGifs').style.display = 'block';
+            document.querySelector('#optionsContainer').style.display = 'none';
         }
 
-        // TODO: fix source gifs do not display
         socket.on('DisplayGif', function (msg) {
-            var targetArea = document.getElementById(msg.target);
-            var item = document.createElement('li');
+            var targetArea = document.getElementById('optimizePanel');
+            var ul = document.createElement('ul');
+            var li = document.createElement('li');
             var gif = document.createElement('img');
 
-            gif.src = msg.path;
-            item.appendChild(gif);
-            targetArea.appendChild(item);
+            // Source gif
+            ul.appendChild(li);
+            gif.src = msg.source;
+            li.appendChild(gif);
+
+            // Options
+            ul.appendChild(document.createElement('li'));
+
+            // Output gif
+            li = document.createElement('li');
+            gif = document.createElement('img');
+            ul.appendChild(li);
+            gif.src = msg.output;
+            li.appendChild(gif);
+
+            targetArea.appendChild(ul);
         });
 
         socket.on('Expand', function (msg) {
@@ -141,7 +148,7 @@
             //messages.appendChild(item);
             messages.insertBefore(item, messages.firstChild);
 
-            window.scrollTo(0, document.body.scrollHeight);
+            //window.scrollTo(0, document.body.scrollHeight);
             console.log(msg.data)
         });
     </script>
