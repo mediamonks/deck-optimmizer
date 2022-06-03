@@ -142,6 +142,7 @@ async function optimizeGifsInPresentation(url, socket) {
                 resizeLine = Math.round(renderedImgWidth) + 'x' +  Math.round(renderedImgHeight);
             }
 
+            // TODO: Some crops are invaid and do not fit the source image - this brakes the optimization
             // determine if cropping is required
             if (element.image.imageProperties.hasOwnProperty('cropProperties')) {
                 console.log('found image with custom crop');
