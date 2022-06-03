@@ -67,7 +67,11 @@ body {
     text-align: right;
 }
 
-#optimizeChoice {
+#optimizeChoice,
+#optimizePanel,
+#displayCompFactor,
+#displayColourRange,
+#displayFrameRate{
     display: none;
 }
 
