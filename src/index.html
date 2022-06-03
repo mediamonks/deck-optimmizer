@@ -48,27 +48,38 @@
 
         <div id="optionsContainer">
             <form id="optionsForm" action="">
-                <label for="compressions">Compression type:</label>
-                <select name="compressions" id="compressionDD">
-                    <option value="lossy">Lossy</option>
-                </select><br>
+                <label for="">Apply lossy compression?</label>
+                <input type="checkbox" id="applyLossy" onchange="displaySlider('applyLossy', 'displayCompFactor')">
+                <br>
                 
-                <label for="factor">Compression Factor:</label>
-                <label for="factor" id="displayFactor"></label>
-                <input type="range" min="0" max="250" value="30" class="slider" id="factor"><br>
-
+                <div id="displayCompFactor">
+                    <label for="factor">Compression Factor:</label>
+                    <label for="factor" id="displayFactor">30</label>
+                    <input type="range" min="0" max="250" value="30" class="slider" id="factor" oninput="updateSliderValue('factor', 'displayFactor')">
+                </div>
+                <br>
+                
                 <label for="">Apply colour correction?</label>
-                <input type="checkbox" value="applyColourCorrect"><br>
-
-                <label for="">Colour range:</label>
-                <label for="range" id="displayRange"></label>
-                <input type="range" min="2" max="256" value="30" class="slider" id="colourRange"><br>
+                <input type="checkbox" id="applyColourCorrect" onchange="displaySlider('applyColourCorrect', 'displayColourRange')">
+                <br>
+                
+                <div id="displayColourRange">
+                    <label for="">Colour range:</label>
+                    <label for="range" id="displayRange">60</label>
+                    <input type="range" min="2" max="256" value="60" class="slider" id="colourRange" oninput="updateSliderValue('colourRange', 'displayRange')">
+                </div>
+                <br>
 
                 <label for="">Adjust frame rate?</label>
-                <input type="checkbox" value="adjustFrameRate"><br>
-
-                <label for="frameRate" id="displayframeRate"></label>
-                <input type="range" min="2" max="256" value="30" class="slider" id="frameRate"><br>
+                <input type="checkbox" id="adjustFrameRate" onchange="displaySlider('adjustFrameRate', 'displayFrameRate')">
+                <br>
+                
+                <div id="displayFrameRate">
+                    <label for="">Frame rate:</label>
+                    <label for="frameRate" id="displayframeRate">30</label>
+                    <input type="range" min="2" max="100" value="30" class="slider" id="frameRate" oninput="updateSliderValue('frameRate', 'displayframeRate')">
+                </div>
+                <br>
 
                 <button type="button" onclick="">Apply</button>
 
@@ -100,16 +111,33 @@
             }
         });
 
+        function displaySlider(checkboxID, target){
+            var checkbox = document.getElementById(checkboxID);
+            var target = document.getElementById(target);
+            if (checkbox.checked == true){
+                target.style.display = 'block';
+            } else {
+                target.style.display = 'none';
+            }
+        };
+
+        function updateSliderValue(sliderId, target){
+            var slider = document.getElementById(sliderId);
+            var target = document.getElementById(target);
+            target.innerHTML = slider.value;
+        };
+
         // TODO: Display only 1 preview source/output gif
         function DisplayAuto() {
             document.querySelector('#optimizePanel').style.display = 'block';
             document.querySelector('#optionsContainer').style.display = 'block';
         };
 
+        // TODO: Display optimization options onclick of each source gif
         function DisplayManual() {
             document.querySelector('#optimizePanel').style.display = 'block';
             document.querySelector('#optionsContainer').style.display = 'none';
-        }
+        };
 
         socket.on('DisplayGif', function (msg) {
             var targetArea = document.getElementById('optimizePanel');
