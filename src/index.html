@@ -44,6 +44,7 @@
                 <li>Original</li>
                 <li></li>
                 <li>Preview</li>
+            </ul>
         </div>
 
         <div id="optionsContainer">
@@ -111,6 +112,15 @@
             }
         });
 
+        function displayOptions(event){
+                var gif = event.target;
+                var optionsColumn = gif.parentElement.nextSibling;
+                var optionsContainer = document.querySelector('#optionsContainer');
+                optionsColumn.append(optionsContainer);
+                optionsContainer.style.display = 'block';
+            };
+
+
         function displaySlider(checkboxID, target){
             var checkbox = document.getElementById(checkboxID);
             var target = document.getElementById(target);
@@ -155,11 +165,12 @@
 
             // Output gif
             li = document.createElement('li');
-            gif = document.createElement('img');
+            var outputGif = document.createElement('img');
             ul.appendChild(li);
-            gif.src = msg.output;
-            li.appendChild(gif);
+            outputGif.src = msg.output;
+            li.appendChild(outputGif);
 
+            gif.addEventListener("click", displayOptions, false);
             targetArea.appendChild(ul);
         });
 
