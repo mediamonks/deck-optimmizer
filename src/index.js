@@ -50,10 +50,104 @@ io.on('connection', async (socket) => {
         console.log(msg, socket)
 
         try {
-            const presentation = await optimizeGifsInPresentation(msg, socket);
+            const presentation = await loadGifsInPresentation(msg, socket);
         } catch (e) {  }
     });
+    
+    socket.on('applyOptimizeSettings', async msg => {
+        // get credentials, create if they don't exist
+        const credentials = await getCredentials('./creds.json');
+        // create new instance of class
+        const slidesOptimizer = new GoogleSlidesOptimizer(credentials);
+        
+        const sourceImagePath = './gif/source/'+msg.gifId+'.gif';
+        const outputImagePath = './gif/output/'+msg.gifId+'_optimized.gif';
+        const sourceUrl = msg.src;
+
+        // download image
+        await downloadImageToDisk(sourceUrl, sourceImagePath);
+
+        //optimize gif and remove source image after its done
+        await optimizeGif(sourceImagePath, outputImagePath, msg.applyLossy, msg.factor, msg.applyColourCorrect, msg.colourRange, msg.adjustFrameRate, msg.frameRate);
+
+        // Check if gif is already stored in s3
+        if (await slidesOptimizer.checkIfGifStored(outputImagePath)){
+            await slidesOptimizer.removeFileFromS3(outputImagePath);
+        }
+
+        //upload via s3 and remove output image after its done
+        const uploadedGifUrl = await slidesOptimizer.uploadFileToS3(outputImagePath);
+        //await fs.unlinkSync(outputImagePath);
+        
+        if (socket) socket.emit('replaceGif', {'output': uploadedGifUrl});
+    });
 });
+
+
+
+async function loadGifsInPresentation(url, socket){
+    // get credentials, create if they don't exist
+    const credentials = await getCredentials('./creds.json');
+
+    // create new instance of class
+    const slidesOptimizer = new GoogleSlidesOptimizer(credentials);
+
+    //get original slides data
+    const presentationId = slidesOptimizer.getSlideIdFromUrl(url);
+    console.log('Received source slides with ID: ' + presentationId, socket)
+
+    // copy source slides to new slides
+    const newSlides = await slidesOptimizer.copySlides(presentationId)
+
+    // log URL to new slides
+    console.log('Copied source slides to new presentation with ID: ' + newSlides.id, socket)
+    console.log('New Slide ')
+
+    // get all slides data
+    const slidesData = await slidesOptimizer.getSlides(newSlides.id);
+
+    // fish out all the images in slides data
+    const imageElements = slidesOptimizer.getImageElements(slidesData);
+    console.log('Found images in slides:' + imageElements.length, socket);
+
+    let gifElements = [];
+    let checkIfGifPromiseArray = [];
+    for (const [index, imageElement] of imageElements.entries()) {
+        checkIfGifPromiseArray.push(new Promise(async (resolve) => {
+            //const mimeType = await getMimeType(imageElement.image.contentUrl)
+            const isGif = await checkIfGif(imageElement.image.contentUrl);
+            if (isGif) {
+                //console.log(index + ': found GIF, adding to array');
+                gifElements.push(imageElement);
+            }
+            resolve();
+        }))
+    }
+
+    await Promise.all(checkIfGifPromiseArray);
+    console.log('Found GIF images in slides:' + gifElements.length, socket);
+
+    let optimizeGifPromiseArray = [];
+    let sourceSize = 0, outputSize = 0;
+
+    for (const [index, element] of gifElements.entries()) {
+
+        optimizeGifPromiseArray.push(new Promise(async (resolve) => {
+
+            const sourceImagePath = './gif/source/'+element.objectId+'.gif';
+            //const outputImagePath = './gif/output/'+element.objectId+'_optimized.gif';
+
+            // download image
+            await downloadImageToDisk(element.image.contentUrl, sourceImagePath);
+
+            // Display source preview
+            const sourceUrl = element.image.contentUrl;
+
+            if (socket) socket.emit('DisplayGif', { source:sourceUrl, output: sourceUrl, id:element.objectId, deckId:newSlides.id});
+            resolve();
+        }))
+    }
+}
 
 async function optimizeGifsInPresentation(url, socket) {
     // get credentials, create if they don't exist

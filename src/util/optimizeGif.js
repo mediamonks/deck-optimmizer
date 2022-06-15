@@ -1,26 +1,23 @@
 const {execFile} = require("child_process");
 const gifsicle = require("gifsicle");
 
-module.exports = async function optimizeGif( sourceImagePath, outputImagePath, optimizeLevel = 30 , cropLine = '', resizeLine  = '') {
+module.exports = async function optimizeGif( sourceImagePath, outputImagePath, applyLossy, factor, applyColourCorrect, colourRange, adjustFrameRate, frameRate ) {
     // http://www.lcdf.org/gifsicle/man.html
 
     const optimizationArray = [];
 
-    console.log(cropLine);
-    console.log(resizeLine);
 
-    // apply desired level of lossiness
-    optimizationArray.push('--lossy='+optimizeLevel.toString());
-
-    // apply desired crop
-    if (cropLine !== '') {
-        optimizationArray.push('--crop='+cropLine.toString());
-    }
-
-    // apply desired size
-    if (resizeLine !== '') {
-        optimizationArray.push('--resize='+resizeLine.toString());
-    }
+    if (applyLossy) {
+        // apply desired level of lossiness
+        optimizationArray.push('--lossy='+factor.toString());
+        console.log('lossy applied');
+    };
+    
+    if (applyColourCorrect) {
+        // apply color correction
+        optimizationArray.push('--colors='+colourRange.toString());
+        console.log('color correction applied');
+    };
 
 
     // TO DO apply desired FPS
