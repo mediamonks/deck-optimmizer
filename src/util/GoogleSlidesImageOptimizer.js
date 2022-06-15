@@ -171,6 +171,36 @@ class GoogleSlidesOptimizer {
         })
     }
 
+    async checkIfGifStored(filePath) {
+        const params = {
+            Bucket: this.bucket,
+            Key: path.basename(filePath), // File name you want to save as in S3
+        };
+
+        try {
+            await this.s3.headObject(params).promise();
+            return true;
+        } catch (err) {
+            console.log("File not Found ERROR : " + err.code);
+            return false;
+        };
+    }
+
+    async removeFileFromS3(filePath){
+        const params = {
+            Bucket: this.bucket,
+            Key: path.basename(filePath), // File name you want to save as in S3
+        };
+
+        try {
+            await this.s3.deleteObject(params).promise();
+            console.log('Removed file from bucket');
+        } catch (err) {
+            console.log("File not Found ERROR : " + err.code);
+        };
+    }
+
+
 }
 
 module.exports = GoogleSlidesOptimizer;
