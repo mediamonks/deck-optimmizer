@@ -56,7 +56,7 @@
                 <div id="displayCompFactor">
                     <label for="factor">Compression Factor:</label>
                     <label for="factor" id="displayFactor">30</label>
-                    <input type="range" min="0" max="250" value="30" class="slider" id="factor" oninput="updateSliderValue('factor', 'displayFactor')">
+                    <input type="range" min="0" max="250" value="30" step="5" class="slider" id="factor" oninput="updateSliderValue('factor', 'displayFactor')">
                 </div>
                 <br>
                 
@@ -67,7 +67,7 @@
                 <div id="displayColourRange">
                     <label for="">Colour range:</label>
                     <label for="range" id="displayRange">60</label>
-                    <input type="range" min="2" max="256" value="60" class="slider" id="colourRange" oninput="updateSliderValue('colourRange', 'displayRange')">
+                    <input type="range" min="2" max="256" value="60" step="8" class="slider" id="colourRange" oninput="updateSliderValue('colourRange', 'displayRange')">
                 </div>
                 <br>
 
@@ -78,11 +78,11 @@
                 <div id="displayFrameRate">
                     <label for="">Frame rate:</label>
                     <label for="frameRate" id="displayframeRate">30</label>
-                    <input type="range" min="2" max="100" value="30" class="slider" id="frameRate" oninput="updateSliderValue('frameRate', 'displayframeRate')">
+                    <input type="range" min="5" max="100" value="30" step="5" class="slider" id="frameRate" oninput="updateSliderValue('frameRate', 'displayframeRate')">
                 </div>
                 <br>
 
-                <button type="button" onclick="">Apply</button>
+                <button type="button" onclick="optimizeGif(event)">Apply</button>
 
             </form>
         </div>
@@ -113,13 +113,39 @@
         });
 
         function displayOptions(event){
+                //clear on every gif clicked
+                var source = document.getElementById('source');
+                var dest = document.getElementById('dest');
+                try{
+                    source.id = "";
+                    dest.id = "";
+                } catch {};
+                
                 var gif = event.target;
                 var optionsColumn = gif.parentElement.nextSibling;
                 var optionsContainer = document.querySelector('#optionsContainer');
+                var outputGif = optionsColumn.nextSibling.firstChild;
+                
                 optionsColumn.append(optionsContainer);
                 optionsContainer.style.display = 'block';
+
+                gif.id = 'source';
+                outputGif.id = 'dest';
             };
 
+        function optimizeGif(event){
+            var sourceGif = document.getElementById('source');
+            var destGif = document.getElementById('dest');
+
+            var applyLossy = document.querySelector('#applyLossy').checked;
+            var factor = document.getElementById('factor').value;
+            var applyColourCorrect = document.querySelector('#applyColourCorrect').checked;
+            var colourRange = document.getElementById('colourRange').value;
+            var adjustFrameRate = document.querySelector('#adjustFrameRate').checked;
+            var frameRate = document.getElementById('frameRate').value;
+
+            socket.emit('applyOptimizeSettings', {'applyLossy':applyLossy, 'factor':factor, 'applyColourCorrect':applyColourCorrect, 'colourRange':colourRange, 'adjustFrameRate':adjustFrameRate, 'frameRate':frameRate, 'gifId':sourceGif.getAttribute('gifId'), 'src':sourceGif.src});
+        }
 
         function displaySlider(checkboxID, target){
             var checkbox = document.getElementById(checkboxID);
@@ -143,11 +169,14 @@
             document.querySelector('#optionsContainer').style.display = 'block';
         };
 
-        // TODO: Display optimization options onclick of each source gif
         function DisplayManual() {
             document.querySelector('#optimizePanel').style.display = 'block';
             document.querySelector('#optionsContainer').style.display = 'none';
         };
+
+        socket.on('replaceGif', async function(msg){
+            document.getElementById('dest').src = (msg.output + '?random=' + new Date().getTime());
+        });
 
         socket.on('DisplayGif', function (msg) {
             var targetArea = document.getElementById('optimizePanel');
@@ -158,6 +187,8 @@
             // Source gif
             ul.appendChild(li);
             gif.src = msg.source;
+            gif.setAttribute('gifId', msg.id);
+            gif.setAttribute('deckId', msg.deckId);
             li.appendChild(gif);
 
             // Options
@@ -168,6 +199,8 @@
             var outputGif = document.createElement('img');
             ul.appendChild(li);
             outputGif.src = msg.output;
+            outputGif.setAttribute('gifId', msg.id);
+            outputGif.setAttribute('deckId', msg.deckId);
             li.appendChild(outputGif);
 
             gif.addEventListener("click", displayOptions, false);
