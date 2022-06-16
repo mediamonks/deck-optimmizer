@@ -77,9 +77,26 @@ io.on('connection', async (socket) => {
 
         //upload via s3 and remove output image after its done
         const uploadedGifUrl = await slidesOptimizer.uploadFileToS3(outputImagePath);
-        //await fs.unlinkSync(outputImagePath);
+        await fs.unlinkSync(outputImagePath);
         
         if (socket) socket.emit('replaceGif', {'output': uploadedGifUrl});
+    });
+
+    socket.on('deleteGifs', async msg => {
+        gifs = msg.gifIds;
+
+        //delete gifs if they exist
+        for (id in gifs){
+            if(fs.existsSync('./gif/source/'+gifs[id]+'.gif')){
+                await fs.unlinkSync('./gif/source/'+gifs[id]+'.gif');
+            }
+            if(fs.existsSync('./gif/output/'+gifs[id]+'_optimized.gif')){
+                await fs.unlinkSync('./gif/output/'+gifs[id]+'_optimized.gif');
+            }
+        }
+
+        // TODO: Delete s3 copy deck
+
     });
 });
 
@@ -143,7 +160,85 @@ async function loadGifsInPresentation(url, socket){
             // Display source preview
             const sourceUrl = element.image.contentUrl;
 
+            // //log current filesize
+            // const sourceImageStats = fs.statSync(sourceImagePath);
+            // sourceSize += sourceImageStats.size;
+
+            // //check image dimensions
+            // const imgDimensions = await sizeOf(sourceImagePath);
+            // const imgWidth = imgDimensions.width;
+            // const imgHeight = imgDimensions.height;
+            // console.log('source image dimensions: '+imgWidth + 'x' + imgHeight)
+
+            // // set "trueScale", name I came up with for the actual scale when a image is 1:1 pixels in fullscreen presenting mode
+            // const trueScaleX = 190.5; // 381/2 and 381x25 = 9525
+            // const trueScaleY = 190.5;
+
+            // // determine what resolution the image is actually rendered at in the slide
+            // let renderedImgWidth = ((element.size.width.magnitude / 25) * element.transform.scaleX) / trueScaleX;
+            // let renderedImgHeight = ((element.size.height.magnitude / 25) * element.transform.scaleY) / trueScaleY;
+            // console.log('rendered image dimensions: '+ Math.round(renderedImgWidth) + 'x' + Math.round(renderedImgHeight))
+
+            // // declare resize/crop string to pass in the optimizeGif function
+            // let resizeLine = '';
+            // let cropLine = '';
+
+            // //determine if resizing of the image is required (when a image is placed at 0.95 scale or lower)
+            // if (renderedImgWidth / imgWidth < 0.95 || renderedImgHeight / imgHeight < 0.95) {
+            //     resizeLine = Math.round(renderedImgWidth) + 'x' +  Math.round(renderedImgHeight);
+            // }
+
+            // TODO: Some crops are invaid and do not fit the source image - this brakes the optimization
+            // determine if cropping is required
+            // if (element.image.imageProperties.hasOwnProperty('cropProperties')) {
+            //     console.log('found image with custom crop');
+
+            //     const cropProps = {
+            //         leftOffset: 0, rightOffset: 0, topOffset: 0, bottomOffset: 0, // make sure all required props are in the object
+            //         ...element.image.imageProperties.cropProperties // overwrite if necessary with props from google's object
+            //     };
+
+            //     // construct the cropLine to pass in the optimizeGif function
+            //     const cropX1 = Math.round(cropProps.leftOffset * imgWidth);
+            //     const cropY1 = Math.round(cropProps.topOffset * imgHeight);
+            //     const cropX2 = Math.round(imgWidth - (cropProps.rightOffset * imgWidth));
+            //     const cropY2 = Math.round(imgHeight - (cropProps.bottomOffset * imgHeight));
+            //     cropLine = cropX1+','+cropY1+'-'+cropX2+','+cropY2;
+
+            //     // additional check to see if resize is actually needed by calculating the full rendered image dimensions, without crop
+            //     const fullWidth = (renderedImgWidth / ((1 - (cropProps.leftOffset + cropProps.rightOffset)) * 100)) * 100;
+            //     const fullHeight = (renderedImgHeight / ((1 - (cropProps.topOffset + cropProps.bottomOffset)) * 100)) * 100;
+            //     console.log('rendered image dimensions without crop: ' + Math.round(fullWidth) + 'x' + Math.round(fullHeight))
+
+            //     if (fullWidth / imgWidth < 0.95 || fullHeight / imgHeight < 0.95) {
+
+            //     } else {
+            //         console.log('no resize required. uncropped image is not actually scaled down.')
+            //         resizeLine = '';
+            //     }
+            // }
+
             if (socket) socket.emit('DisplayGif', { source:sourceUrl, output: sourceUrl, id:element.objectId, deckId:newSlides.id});
+
+
+            // //optimize gif and remove source image after its done
+            // await optimizeGif(sourceImagePath, outputImagePath, 200, cropLine, resizeLine);
+            //await fs.unlinkSync(sourceImagePath);
+
+            // //log optimized filesize
+            // const outputImageStats = fs.statSync(outputImagePath);
+            // const optimizationPercentage = 100 - ((outputImageStats.size / sourceImageStats.size)*100);
+            // outputSize += outputImageStats.size;
+
+            // //upload via s3 and remove output image after its done
+            // const uploadedGifUrl = await slidesOptimizer.uploadFileToS3(outputImagePath);
+            //await fs.unlinkSync(outputImagePath);
+
+            // if (socket) socket.emit('DisplayGif', { source:sourceUrl, output: uploadedGifUrl});
+            // //replace url in google slides
+            // await slidesOptimizer.replaceImageUrl(newSlides.id, element.objectId, uploadedGifUrl)
+
+            // console.log('#' +(index+1)+ ' of '+ gifElements.length +', Input: ' + formatSizeUnits(sourceImageStats.size) + ', Output: ' + formatSizeUnits(outputImageStats.size) + ', Optimization: ' + Math.round(optimizationPercentage) + "%, " + toHref(uploadedGifUrl, 'Link'), socket);
             resolve();
         }))
     }
