@@ -10,9 +10,6 @@
 </head>
 
 <body>
-
-    <div class="footer">deck optimmizer beta v0.2 <a target="_blank"
-            href="https://github.com/mirkovw/deck-optimmizer">source</a></div>
     <div class="main">
 
         <div class="title"> deck optimmizer <sup class="beta">beta</sup> </div>
@@ -87,7 +84,14 @@
             </form>
         </div>
 
+        <div id="processOptions">
+            <button type="button" onclick="cancelOptimization(event)" id="cancelBtn">Cancel</button>
+            <button type="button" onclick="updateDeck()" id="finishBtn">Finish</button>
+        </div>
+
     </div>
+
+    <div class="footer">deck optimmizer beta v0.2 <a target="_blank" href="https://github.com/mirkovw/deck-optimmizer">source</a></div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
@@ -148,6 +152,7 @@
         }
 
         function displaySlider(checkboxID, target){
+            // update display of slider
             var checkbox = document.getElementById(checkboxID);
             var target = document.getElementById(target);
             if (checkbox.checked == true){
@@ -167,14 +172,31 @@
         function DisplayAuto() {
             document.querySelector('#optimizePanel').style.display = 'block';
             document.querySelector('#optionsContainer').style.display = 'block';
+            document.querySelector('#processOptions').style.display = 'block';
         };
 
         function DisplayManual() {
             document.querySelector('#optimizePanel').style.display = 'block';
             document.querySelector('#optionsContainer').style.display = 'none';
+            document.querySelector('#processOptions').style.display = 'block';
+        };
+
+        function cancelOptimization(event){
+            // delete all stored gifs & copy of slides
+            gifElements = document.querySelectorAll('[gifid]');
+            var gifIds = [];
+
+            gifElements.forEach(element => {
+                gifIds.push(element.getAttribute('gifid'))
+            });
+
+            console.log(gifIds)
+            await socket.emit('deleteGifs', {'gifIds':gifIds});
+            location.reload();
         };
 
         socket.on('replaceGif', async function(msg){
+            //assign timestamp to src to refresh img (does not refresh img if src is the same url) 
             document.getElementById('dest').src = (msg.output + '?random=' + new Date().getTime());
         });
 
