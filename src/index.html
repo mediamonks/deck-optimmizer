@@ -11,7 +11,11 @@
 
 <body>
     <div class="main">
-
+        
+        <div id='overlay'>
+            <img id="announcement"></img>
+        </div>
+        
         <div class="title"> deck optimmizer <sup class="beta">beta</sup> </div>
         <div class="helpTxt">
             First, share the deck with<br>
@@ -29,9 +33,9 @@
         </ul>
 
         <form id="optimizeChoice">
-            <input type="radio" name="optimizeChoice" value="auto" onclick=DisplayAuto()>
+            <input type="radio" name="optimizeChoice" value="auto" id="AutoOptimize" onclick=DisplayAuto()>
             <label for="auto">Auto-Optimize</label>
-            <input type="radio" name="optimizeChoice" value="manual" onclick=DisplayManual()>
+            <input type="radio" name="optimizeChoice" value="manual" id="ManualOptimize" onclick=DisplayManual()>
             <label for="manual">Optimize Manually</label>
         </form>
 
@@ -86,7 +90,7 @@
 
         <div id="processOptions">
             <button type="button" onclick="cancelOptimization(event)" id="cancelBtn">Cancel</button>
-            <button type="button" onclick="updateDeck()" id="finishBtn">Finish</button>
+            <button type="button" onclick="updateDeck(event)" id="finishBtn">Finish</button>
         </div>
 
     </div>
@@ -116,7 +120,7 @@
             }
         });
 
-        function displayOptions(event){
+        async function displayOptions(event){
                 //clear on every gif clicked
                 var source = document.getElementById('source');
                 var dest = document.getElementById('dest');
@@ -137,7 +141,7 @@
                 outputGif.id = 'dest';
             };
 
-        function optimizeGif(event){
+        async function optimizeGif(event){
             var sourceGif = document.getElementById('source');
             var destGif = document.getElementById('dest');
 
@@ -148,8 +152,28 @@
             var adjustFrameRate = document.querySelector('#adjustFrameRate').checked;
             var frameRate = document.getElementById('frameRate').value;
 
-            socket.emit('applyOptimizeSettings', {'applyLossy':applyLossy, 'factor':factor, 'applyColourCorrect':applyColourCorrect, 'colourRange':colourRange, 'adjustFrameRate':adjustFrameRate, 'frameRate':frameRate, 'gifId':sourceGif.getAttribute('gifId'), 'src':sourceGif.src});
-        }
+            var auto = document.querySelector('#AutoOptimize').checked;
+            
+            if (auto){
+                gifElements = document.querySelectorAll('[gifid]');
+                optimizeArray = [];
+
+                gifElements.forEach(element => {
+                    sourceGif = element.getAttribute('src')  
+                    gifid = element.getAttribute('gifid')
+                    optimizeArray.push(new Promise(async (resolve) => {
+                        socket.emit('applyOptimizeSettings', {'auto':auto, 'applyLossy':applyLossy, 'factor':factor, 'applyColourCorrect':applyColourCorrect, 'colourRange':colourRange, 'adjustFrameRate':adjustFrameRate, 'frameRate':frameRate, 'gifId':gifid, 'src':sourceGif});
+                        resolve();
+                    }))
+                });
+                await Promise.all(optimizeArray);
+
+            } else {
+                socket.emit('applyOptimizeSettings', {'auto':auto, 'applyLossy':applyLossy, 'factor':factor, 'applyColourCorrect':applyColourCorrect, 'colourRange':colourRange, 'adjustFrameRate':adjustFrameRate, 'frameRate':frameRate, 'gifId':sourceGif.getAttribute('gifId'), 'src':sourceGif.src});
+                setTimeout(console.log('waiting'), 500);
+            }
+        };
+
 
         function displaySlider(checkboxID, target){
             // update display of slider
@@ -170,7 +194,7 @@
 
         // TODO: Display only 1 preview source/output gif
         function DisplayAuto() {
-            document.querySelector('#optimizePanel').style.display = 'block';
+            document.querySelector('#optimizePanel').style.display = 'none';
             document.querySelector('#optionsContainer').style.display = 'block';
             document.querySelector('#processOptions').style.display = 'block';
         };
@@ -181,19 +205,45 @@
             document.querySelector('#processOptions').style.display = 'block';
         };
 
+        function updateDeck(event){
+            gifElements = document.querySelectorAll('[gifid]');
+            deckid = gifElements[0].getAttribute('deckid');
+
+            var gifData = {};
+
+            gifElements.forEach(element => {
+                gifData[element.getAttribute('gifid')] = element.getAttribute('src')                
+            });
+
+            socket.emit('updateCopyDeck', {'gifData':gifData, 'deckid':deckid});
+        };
+
         function cancelOptimization(event){
             // delete all stored gifs & copy of slides
             gifElements = document.querySelectorAll('[gifid]');
+            deckid = gifElements[0].getAttribute('deckid');
+
             var gifIds = [];
 
             gifElements.forEach(element => {
                 gifIds.push(element.getAttribute('gifid'))
             });
 
-            console.log(gifIds)
-            await socket.emit('deleteGifs', {'gifIds':gifIds});
+            socket.emit('deleteGifs', {'gifIds':gifIds, 'deckid':deckid});
             location.reload();
         };
+
+        socket.on('displayWait', async function(msg){
+            overlay = document.getElementById('overlay');
+            announcement = document.getElementById('announcement');
+            overlay.style.display='block';
+            announcement.src = "loading.gif";
+        });
+
+        socket.on('finishWait', async function(msg){
+            overlay = document.getElementById('overlay');
+            overlay.style.display='none';
+        });
 
         socket.on('replaceGif', async function(msg){
             //assign timestamp to src to refresh img (does not refresh img if src is the same url) 
