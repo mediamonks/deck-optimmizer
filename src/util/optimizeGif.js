@@ -19,21 +19,21 @@ module.exports = async function optimizeGif( sourceImagePath, outputImagePath, a
         console.log('color correction applied');
     };
 
-
-    // TO DO apply desired FPS
-
     return new Promise((resolve) => {
-        execFile(gifsicle, [
-            ...optimizationArray,
-            '-o', outputImagePath,
-            sourceImagePath
-        ], (error, stdout) => {
+        try{
+            execFile(gifsicle, [
+                ...optimizationArray,
+                '-o', outputImagePath,
+                sourceImagePath
+            ], (error, stdout) => {
 
             if (error) {
-                throw error;
+                console.log(error);
             }
-
             resolve(stdout);
-        });
+            return
+            }).timeout(7500);
+        } catch (error) {};
+        
     });
 }
