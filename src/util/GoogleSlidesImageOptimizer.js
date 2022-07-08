@@ -2,6 +2,7 @@ const {google} = require("googleapis");
 const fs = require("fs-extra");
 const AWS = require("aws-sdk");
 const path = require("path");
+const {OAuth2Client} = require('google-auth-library');
 
 class GoogleSlidesOptimizer {
 
@@ -20,9 +21,11 @@ class GoogleSlidesOptimizer {
         });
 
         this.bucket = auth.aws.bucket;
+        this.clientId = auth.google['client_id']
 
         this.slidesService = google.slides({version: 'v1', auth: this.auth});
         this.driveService = google.drive({version: 'v3', auth: this.auth});
+        this.authClient = new OAuth2Client(auth.google['client_id']);
     }
 
     async getSlides(presentationId) {
@@ -72,9 +75,65 @@ class GoogleSlidesOptimizer {
         } catch (e) {
             console.log(e)
         }
+    }
 
+    async changeOwnership(presentationId, targetUserEmail){
+        try {
+            const res = await new Promise((resolve) => {
+                try{
+                    this.driveService.permissions.list({
+                        'fileId': presentationId
+                    }, (err, driveResponse) => {
+                        if (err) console.log(err)
+                        resolve(driveResponse.data);
+                    });
+                } catch (error) {console.log(error)}
+            });
 
+            console.log(res['permissions']);
 
+            // Iterate through permissions and make signed-in user the owner
+            res['permissions'].forEach(permission => {
+                if(permission['role'] == 'owner'){
+                    
+                    try {
+
+                        this.driveService.permissions.create({
+                            fileId: presentationId,
+                            supportsAllDrives: true,
+                            transferOwnership: true,
+                            resource: {role: 'owner', type: 'user', pendingOwner: true, 'emailAddress': targetUserEmail},
+                        });
+
+                        // this.driveService.permissions.update({
+                        //     'fileId': presentationId,
+                        //     'permissionId': permission['id'],
+                        //     'transferOwnership': true,
+                        //     'resource': { 'role': 'owner'}
+                        // });
+                    } catch (err) { console.log(err)}
+
+                }
+            })
+            
+
+        } catch (e) {
+            console.log(e)
+        }
+    }
+
+    async deleteSlides(id){
+        const del = await new Promise((resolve) => {
+            try{
+                this.driveService.files.delete({
+                    supportsTeamDrives: 'false',
+                    fileId: id
+                }, (err, driveResponse) => {
+                    if (err) console.log(err)
+                    resolve();
+                });
+            } catch (error) {console.log(error)}
+        });
     }
 
     getImageElements (slides) {
@@ -200,6 +259,13 @@ class GoogleSlidesOptimizer {
         };
     }
 
+    async verifyToken(token){
+        const ticket = await this.authClient.verifyIdToken({
+            idToken: token,
+            audience: this.clientId, 
+        });
+        return ticket
+    }
 
 }
 

@@ -6,7 +6,7 @@ module.exports = async function getCredentials( credsFilePath ) {
     try {
         credentials = await fs.readJson(credsFilePath);
     } catch (e) {
-        const google_questions = ['client_email', 'private_key'].map(question => {
+        const google_questions = ['client_email', 'private_key', 'client_id'].map(question => {
             return {
                 type: 'input',
                 name: question,
@@ -30,7 +30,8 @@ module.exports = async function getCredentials( credsFilePath ) {
         credentials = {
             'google': {
                 client_email: google_answers.client_email,
-                private_key: '-----BEGIN PRIVATE KEY-----\n'+google_answers.private_key+'\n-----END PRIVATE KEY-----'
+                private_key: '-----BEGIN PRIVATE KEY-----\n'+google_answers.private_key+'\n-----END PRIVATE KEY-----',
+                client_id: google_answers.client_id
             },
             'aws': {
                 ...aws_answers
