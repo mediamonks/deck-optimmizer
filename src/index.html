@@ -7,16 +7,32 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;900&display=swap" rel="stylesheet">
     <link href="css/main.css" rel="stylesheet">
+    <script src="https://apis.google.com/js/platform.js?onload=init" async defer></script>
+    <script src="https://apis.google.com/js/platform.js" async defer></script>
+    <meta name="google-signin-client_id" content="891852856749-q0k1uekqoku5oiqlgdps6ke07j3qe4q3.apps.googleusercontent.com">
+
 </head>
 
 <body>
     <div class="main">
         
-        <div id='overlay'>
-            <img id="announcement"></img>
+        <div id="accountbar">
+            <div class="g-signin2" data-onsuccess="onSignIn">    
+            </div>
+            <a href="#" id="signOutButton" onclick="signOut();">Sign out</a>
         </div>
-        
+
         <div class="title"> deck optimmizer <sup class="beta">beta</sup> </div>
+
+        <div id="log">
+            <div id="expandarea">
+                <p>Process Log</p>
+                <img id="minimize" src="./minimize.png">
+                <img id="maximize" src="./maximize.png">
+            </div>
+            <ul id="messages"></ul>
+        </div>
+
         <div class="helpTxt">
             First, share the deck with<br>
             deck-optimmizer@deck-optimmizer.iam.gserviceaccount.com<br><br>
@@ -29,8 +45,6 @@
             <button class="optimize">Optimize</button>
         </form>
 
-        <ul id="messages">
-        </ul>
 
         <form id="optimizeChoice">
             <input type="radio" name="optimizeChoice" value="auto" id="AutoOptimize" onclick=DisplayAuto()>
@@ -41,7 +55,7 @@
 
         <br>
         <div id="optimizePanel">
-            <ul>
+            <ul id="listHeader">
                 <li>Original</li>
                 <li></li>
                 <li>Preview</li>
@@ -100,10 +114,6 @@
     <script src="/socket.io/socket.io.js"></script>
     <script>
         var socket = io();
-
-        var messages = document.getElementById('messages');
-        var form = document.getElementById('form');
-        var optimizeChoice = document.getElementById('optimizeChoice');
         var input = document.getElementById('input');
 
         form.addEventListener('submit', function (e) {
@@ -111,7 +121,6 @@
             if (input.value) {
                 document.querySelector('#form').remove();
                 document.querySelector('.helpTxt').innerHTML = 'Would you like to run an auto optimization or choose tune each gif manually?';
-                //document.querySelector('#messages').style.display='block';
 
                 document.querySelector('#optimizeChoice').style.display = 'block';
 
@@ -120,6 +129,39 @@
             }
         });
 
+        document.getElementById("expandarea").addEventListener("click", toggleLog);
+
+        async function toggleLog(){
+            let minimize = document.getElementById('minimize');
+            let maximize = document.getElementById('maximize');
+            let messages = document.getElementById('messages');
+
+            if (minimize.style.display == "block"){
+                maximize.style.display = "block";
+                minimize.style.display = "none";
+                messages.style.display = "none";
+            } else {
+                minimize.style.display = "block";
+                maximize.style.display = "none";
+                messages.style.display = "block";
+            }
+        }
+
+        function onSignIn(googleUser) {
+            var profile = googleUser.getBasicProfile();
+            var id_token = googleUser.getAuthResponse().id_token;
+            window.sessionStorage.setItem('google-session', id_token);
+            document.getElementById("signOutButton").style.display = "block";
+        }
+
+        function signOut() {
+            var auth2 = gapi.auth2.getAuthInstance();
+            auth2.signOut().then(function () {
+                console.log('User signed out.');
+                document.getElementById("signOutButton").style.display = "none";
+            });
+        }
+        
         async function displayOptions(event){
                 //clear on every gif clicked
                 var source = document.getElementById('source');
@@ -156,7 +198,16 @@
             
             if (auto){
                 gifElements = document.querySelectorAll('[gifid]');
+                
+                let minimize = document.getElementById('minimize');
+                let maximize = document.getElementById('maximize');
+                let messages = document.getElementById('messages');
                 optimizeArray = [];
+                
+                document.getElementById("optionsForm").style.display = "none";
+                minimize.style.display = "block";
+                maximize.style.display = "none";
+                messages.style.display = "block";
 
                 gifElements.forEach(element => {
                     sourceGif = element.getAttribute('src')  
@@ -170,7 +221,6 @@
 
             } else {
                 socket.emit('applyOptimizeSettings', {'auto':auto, 'applyLossy':applyLossy, 'factor':factor, 'applyColourCorrect':applyColourCorrect, 'colourRange':colourRange, 'adjustFrameRate':adjustFrameRate, 'frameRate':frameRate, 'gifId':sourceGif.getAttribute('gifId'), 'src':sourceGif.src});
-                setTimeout(console.log('waiting'), 500);
             }
         };
 
@@ -192,10 +242,13 @@
             target.innerHTML = slider.value;
         };
 
-        // TODO: Display only 1 preview source/output gif
         function DisplayAuto() {
+            parent = document.getElementById('optimizeChoice');
+            container = document.querySelector('#optionsContainer')
+            parent.after(container);
+
             document.querySelector('#optimizePanel').style.display = 'none';
-            document.querySelector('#optionsContainer').style.display = 'block';
+            container.style.display = 'block';
             document.querySelector('#processOptions').style.display = 'block';
         };
 
@@ -215,7 +268,9 @@
                 gifData[element.getAttribute('gifid')] = element.getAttribute('src')                
             });
 
-            socket.emit('updateCopyDeck', {'gifData':gifData, 'deckid':deckid});
+            let googletoken = window.sessionStorage.getItem('google-session');
+
+            socket.emit('updateCopyDeck', {'gifData':gifData, 'deckid':deckid, 'token': googletoken});
         };
 
         function cancelOptimization(event){
@@ -233,61 +288,53 @@
             location.reload();
         };
 
-        socket.on('displayWait', async function(msg){
-            overlay = document.getElementById('overlay');
-            announcement = document.getElementById('announcement');
-            overlay.style.display='block';
-            announcement.src = "loading.gif";
-        });
-
-        socket.on('finishWait', async function(msg){
-            overlay = document.getElementById('overlay');
-            overlay.style.display='none';
-        });
-
         socket.on('replaceGif', async function(msg){
             //assign timestamp to src to refresh img (does not refresh img if src is the same url) 
             document.getElementById('dest').src = (msg.output + '?random=' + new Date().getTime());
         });
 
         socket.on('DisplayGif', function (msg) {
-            var targetArea = document.getElementById('optimizePanel');
-            var ul = document.createElement('ul');
-            var li = document.createElement('li');
-            var gif = document.createElement('img');
+            for (const [key, val] of Object.entries(msg.gifarray)){
+                var targetArea = document.getElementById('optimizePanel');
+                var ul = document.createElement('ul');
+                var li = document.createElement('li');
+                var gif = document.createElement('img');
 
-            // Source gif
-            ul.appendChild(li);
-            gif.src = msg.source;
-            gif.setAttribute('gifId', msg.id);
-            gif.setAttribute('deckId', msg.deckId);
-            li.appendChild(gif);
+                // Source gif
+                ul.appendChild(li);
+                gif.src = val['source'];
+                gif.setAttribute('gifId', val['id']);
+                gif.setAttribute('deckId', val['deckId']);
+                li.appendChild(gif);
 
-            // Options
-            ul.appendChild(document.createElement('li'));
+                // Options
+                ul.appendChild(document.createElement('li'));
 
-            // Output gif
-            li = document.createElement('li');
-            var outputGif = document.createElement('img');
-            ul.appendChild(li);
-            outputGif.src = msg.output;
-            outputGif.setAttribute('gifId', msg.id);
-            outputGif.setAttribute('deckId', msg.deckId);
-            li.appendChild(outputGif);
+                // Output gif
+                li = document.createElement('li');
+                var outputGif = document.createElement('img');
+                ul.appendChild(li);
+                outputGif.src = val['output'];
+                outputGif.setAttribute('gifId', val['id']);
+                outputGif.setAttribute('deckId', val['deckId']);
+                li.appendChild(outputGif);
 
-            gif.addEventListener("click", displayOptions, false);
-            targetArea.appendChild(ul);
+                gif.addEventListener("click", displayOptions, false);
+                targetArea.appendChild(ul);
+            };
+            //socket.emit("update message", {data: });
+            var item = document.createElement('li');
+            item.innerHTML = "Preview loaded.";
+            messages.insertBefore(item, messages.firstChild);
         });
 
-        socket.on('update message', function (msg) {
+        socket.on('update message', function(msg) {
             var item = document.createElement('li');
             item.innerHTML = msg.data;
             //messages.appendChild(item);
             messages.insertBefore(item, messages.firstChild);
-
-            //window.scrollTo(0, document.body.scrollHeight);
             console.log(msg.data)
-        });
+    });
     </script>
 </body>
 
