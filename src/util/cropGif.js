@@ -20,12 +20,7 @@ module.exports = async function cropGif(sourceImagePath, outputImagePath, cropLi
             ...cropArray,
             '-o', outputImagePath,
             sourceImagePath
-        ], (error, stdout) => {
-
-            if (error) {
-                console.log(error);
-            }
-
-        });
+        ], (error, stdout) => { resolve();}
+        );
     });
 };
