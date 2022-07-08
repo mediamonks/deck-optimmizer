@@ -8,6 +8,7 @@ const fs = require("fs-extra");
 const axios = require('axios');
 const mime = require('mime');
 const sizeOf = util.promisify(require('image-size'))
+const cliProgress = require('cli-progress');
 
 const GoogleSlidesOptimizer = require("./util/GoogleSlidesImageOptimizer");
 
@@ -293,6 +294,7 @@ async function loadGifsInPresentation(url, socket){
     const imageElements = slidesOptimizer.getImageElements(slidesData);
     console.log('Found images in slides:' + imageElements.length, socket);
 
+<<<<<<< HEAD
     let gifElements = [];
     let checkIfGifPromiseArray = [];
     for (const [index, imageElement] of imageElements.entries()) {
@@ -309,6 +311,44 @@ async function loadGifsInPresentation(url, socket){
 
     await Promise.all(checkIfGifPromiseArray);
     console.log('Found GIF images in slides: ' + gifElements.length, socket);
+=======
+    // find all gifs in imageElements
+    const progressBar = new cliProgress.SingleBar({}, cliProgress.Presets.shades_classic);
+    progressBar.start(imageElements.length, 0);
+
+    const pLimit = await import('p-limit'); // using this ESM package to limit concurrency of promises
+    const limit = pLimit.default(100); // set limit to 100 promises at a time
+
+    // function to run in each promise
+    const inputPromise = async (imageElement) => {
+        const isGif = await checkIfGif(imageElement.image.contentUrl)
+
+        if (isGif) {
+            return imageElement;
+        }
+        else {
+            return 'not a gif';
+        }
+    }
+
+    // add all promises to array
+    const imageCheckPromises = imageElements.map(imageElement => {
+        return limit(() => inputPromise(imageElement).then( (result) => {
+            progressBar.increment(1);
+            return result;
+        }))
+    })
+
+    const imageCheckingResult = await Promise.all(imageCheckPromises); // run all promises with limited concurrency
+
+    const gifElements = imageCheckingResult.filter(result => {
+        return result !== 'not a gif'; // filter results
+    })
+
+    progressBar.stop();
+
+    console.log('Found GIF images in slides:' + gifElements.length, socket);
+>>>>>>> adds support for promises with limited concurrency
 
     let gifs = {};
     let sourceSize = 0, outputSize = 0;

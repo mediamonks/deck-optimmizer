@@ -20,6 +20,7 @@
   "dependencies": {
     "aws-sdk": "^2.1117.0",
     "axios": "^0.26.1",
+    "cli-progress": "^3.11.2",
     "express": "^4.17.3",
     "file-type-cjs": "^1.0.5",
     "forever": "^4.0.3",
@@ -29,7 +30,11 @@
     "image-size": "^1.0.1",
     "inquirer": "^8.2.2",
     "open": "^8.4.0",
+    "p-limit": "^4.0.0",
     "server-destroy": "^1.0.1",
     "socket.io": "^4.4.1"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.19"
   }
 }
