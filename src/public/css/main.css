@@ -14,6 +14,9 @@ body {
     background-color: #000;
     height: 100%
 }
+#signOutButton{
+    display: none;
+}
 
 .title {
     font-family: 'Roboto', sans-serif;
@@ -45,6 +48,8 @@ body {
     padding: 0;
     padding-top: 10px;
     display: none;
+    max-height: 200px;
+    overflow-x: auto;
 }
 
 #messages a {
