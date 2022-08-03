@@ -5,13 +5,10 @@ const http = require('http').Server(app);
 const io = require('socket.io')(http);
 const util = require("util");
 const fs = require("fs-extra");
-const axios = require('axios');
-const mime = require('mime');
 const sizeOf = util.promisify(require('image-size'))
 const cliProgress = require('cli-progress');
 
 const GoogleSlidesOptimizer = require("./util/GoogleSlidesImageOptimizer");
-
 const getCredentials = require("./util/getCredentials");
 const downloadImageToDisk = require("./util/downloadImageToDisk");
 const formatSizeUnits = require("./util/formatSizeUnits");
@@ -25,13 +22,9 @@ const log_stdout = process.stdout;
 const toHref = (url, label) => '<a target="_blank" href="'+url+'">' + (label || url) + '</a>';
 
 (async () => {
-    console.log('Checking Credentials')
-    const credentials = await getCredentials('./creds.json');
-
     http.listen(port, () => {
         console.log(`Deck Optimmizer - Server running at http://localhost:${port}/`);
     });
-
 })();
 
 console.log = function(d, socket) { 
@@ -46,56 +39,52 @@ app.get('/', (req, res) => {
 app.use(express.static(__dirname + '/public'));
 
 io.on('connection', async (socket) => {
-    console.log('Client Connected')
-
-    socket.on('presentationId', async msg => {
-        console.log(msg, socket)
-
+    socket.on('processDeck', async msg => {
         try {
-            const presentation = await loadGifsInPresentation(msg, socket);
-        } catch (e) {  }
+            const presentation = await processDeck(msg, socket);
+        } catch (e) { console.log(e) }
     });
     
     socket.on('applyOptimizeSettings', async msg => {
-        const sourceImagePath = './gif/source/'+msg.gifId+'.gif';
-        const outputImagePath = './gif/output/'+msg.gifId+'_optimized.gif';
-        const sourceUrl = msg.src;
+        if (msg.transparency == 'undefined'){
+            const sourceImagePath = './gif/source/'+msg.gifId+'.gif';
+            const outputImagePath = './gif/output/' + msg.gifId + '_optimized.gif';
+            const sourceUrl = msg.src;
 
-        // download image
-        await downloadImageToDisk(sourceUrl, sourceImagePath);
+            // download image
+            await downloadImageToDisk(sourceUrl, sourceImagePath);
 
-        //optimize gif and remove source image after its done
-        console.log('Optimizing gif...', socket);
-        await optimizeGif(sourceImagePath, outputImagePath, msg.applyLossy, msg.factor, msg.applyColourCorrect, msg.colourRange, msg.adjustFrameRate, msg.frameRate);
-        
+            //optimize gif and remove source image after its done
+            console.log('Optimizing gif...', socket);
+            await optimizeGif(sourceImagePath, outputImagePath, msg.applyLossy, msg.factor, msg.applyColourCorrect, msg.colourRange);
+            console.log('Optimization complete.', socket);
 
-        await fs.copyFile(outputImagePath, './src/public/gif/'+msg.gifId+'_optimized.gif');
-        //fs.unlinkSync(sourceImagePath);
-        
-        if (msg.auto == false){
-            if (socket) socket.emit('replaceGif', {'output': './gif/'+msg.gifId+'_optimized.gif'});
+            await fs.copyFile(outputImagePath, './src/public/gif/' + msg.gifId + '_optimized.gif');
+
+            if (msg.auto == false) {
+                if (socket) socket.emit('replaceGif', { 'output': './gif/' + msg.gifId + '_optimized.gif' });
+            } else {
+                console.log("Optimized #"+msg.count+" of "+ msg.total, socket)
+            }
+            socket.emit('optimizationCompleted', 'completed');
         }
     });
 
     socket.on('deleteGifs', async msg => {
-        // get credentials, create if they don't exist
-        const credentials = await getCredentials('./creds.json');
-
-        // create new instance of class
-        const slidesOptimizer = new GoogleSlidesOptimizer(credentials);
-
         gifs = msg.gifIds;
-
-        //delete gifs if they exist
         for (id in gifs){
-            if(fs.existsSync('./gif/source/'+gifs[id]+'.gif')){
-                await fs.unlinkSync('./gif/source/'+gifs[id]+'.gif');
-            }
-            if(fs.existsSync('./gif/output/'+gifs[id]+'_optimized.gif')){
-                await fs.unlinkSync('./gif/output/'+gifs[id]+'_optimized.gif');
-            }
+            try{
+                if (fs.existsSync('./gif/source/' + gifs[id] + '.gif')) {
+                    await fs.unlinkSync('./gif/source/' + gifs[id] + '.gif');
+                }
+                if (fs.existsSync('./gif/output/' + gifs[id] + '_optimized.gif')) {
+                    await fs.unlinkSync('./gif/output/' + gifs[id] + '_optimized.gif');
+                }
+                if (fs.existsSync('public/gif/' + gifs[id] + '_optimized.gif')) {
+                    await fs.unlinkSync('public/gif/' + gifs[id] + '_optimized.gif');
+                }
+            } catch (e) {}
         }
-        slidesOptimizer.deleteSlides(msg.deckid);
     });
 
     socket.on('updateCopyDeck', async msg =>{
@@ -121,11 +110,9 @@ io.on('connection', async (socket) => {
         // prevent socket timeout for large decks
         socket.emit('', '');
         for (const [imageElement] of imageElements.entries()) {
-            console.log(imageElement)
             checkIfGifPromiseArray.push(new Promise(async (resolve) => {
                 isGif = await checkIfGif(imageElements[imageElement].image.contentUrl);
                 if (isGif) {
-                    console.log(isGif)
                     gifElements.push(imageElements[imageElement]);
                 }
                 resolve();
@@ -133,121 +120,118 @@ io.on('connection', async (socket) => {
     }
 
     await Promise.all(checkIfGifPromiseArray);
-    
     optimizedGifs = fs.readdirSync("./src/public/gif/");
-
     let optimizeGifPromiseArray = [];
     let totalSourceSize = 0, outputSize = 0;
 
     for (const [index, element] of gifElements.entries()) {
         optimizeGifPromiseArray.push(new Promise(async (resolve) => {
-            sourceImageId = element.objectId;
-
-            match = optimizedGifs.some(e =>e.includes(sourceImageId));
-            
-            if (match){
-                sourceImagePath = './gif/source/'+element.objectId+'.gif';
-                outputImagePath = './gif/output/'+element.objectId+'_optimized.gif';
-                sourceSize = fs.statSync(sourceImagePath).size;
-            }else{
-                sourceImagePath = './gif/source/'+element.objectId+'.gif';
-                outputImagePath = './gif/output/'+element.objectId+'.gif';
-                sourceSize = fs.statSync(sourceImagePath).size;
-                
-                // download image
-                await downloadImageToDisk(element.image.contentUrl, outputImagePath);
-                outputImageStats = fs.statSync(outputImagePath);
-            }
-            totalSourceSize += sourceSize
-
-            // Display source preview
-            sourceUrl = element.image.contentUrl;
-
-            //log current filesize
-            sourceImageStats = fs.statSync(sourceImagePath);
-
-            //check image dimensions
-            imgDimensions = await sizeOf(sourceImagePath);
-            imgWidth = imgDimensions.width;
-            imgHeight = imgDimensions.height;
-            console.log('Source image dimensions: '+imgWidth + 'x' + imgHeight)
-
-            // set "trueScale", name I came up with for the actual scale when a image is 1:1 pixels in fullscreen presenting mode
-            const trueScaleX = 190.5; // 381/2 and 381x25 = 9525
-            const trueScaleY = 190.5;
-
-            // determine what resolution the image is actually rendered at in the slide
-            let renderedImgWidth = ((element.size.width.magnitude / 25) * element.transform.scaleX) / trueScaleX;
-            let renderedImgHeight = ((element.size.height.magnitude / 25) * element.transform.scaleY) / trueScaleY;
-            console.log('Rendered image dimensions: '+ Math.round(renderedImgWidth) + 'x' + Math.round(renderedImgHeight))
-
-            // declare resize/crop string to pass in the optimizeGif function
-            let resizeLine = '';
-            let cropLine = '';
-
-            // //determine if resizing of the image is required (when a image is placed at 0.95 scale or lower)
-            if (renderedImgWidth / imgWidth < 0.95 || renderedImgHeight / imgHeight < 0.95) {
-                resizeLine = Math.round(renderedImgWidth) + 'x' +  Math.round(renderedImgHeight);
-            }
-            // TODO: Some crops are invaid and do not fit the source image - this brakes the optimization
-            // determine if cropping is required
-            if (element.image.imageProperties.hasOwnProperty('cropProperties')) {
-                console.log('Found image with custom crop', socket);
-
-                const cropProps = {
-                    leftOffset: 0, rightOffset: 0, topOffset: 0, bottomOffset: 0, // make sure all required props are in the object
-                    ...element.image.imageProperties.cropProperties // overwrite if necessary with props from google's object
-                };
-
-                // construct the cropLine to pass in the optimizeGif function
-                cropX1 = Math.round(cropProps.leftOffset * imgWidth);
-                cropY1 = Math.round(cropProps.topOffset * imgHeight);
-                cropX2 = Math.round(imgWidth - (cropProps.rightOffset * imgWidth));
-                cropY2 = Math.round(imgHeight - (cropProps.bottomOffset * imgHeight));
-
-                // Address negative crop coords
-                if ((parseInt(cropX1) || parseInt(cropY1)) < 0 ){
-                    cropLine = ""
+            if (!element.image.imageProperties['transparency']){
+                sourceImageId = element.objectId;
+                match = optimizedGifs.some(e => e.includes(sourceImageId));
+                if (match) {
+                    sourceImagePath = './gif/source/' + element.objectId + '.gif';
+                    outputImagePath = './gif/output/' + element.objectId + '_optimized.gif';
+                    sourceSize = fs.statSync(sourceImagePath).size;
                 } else {
-                    cropLine = cropX1+','+cropY1+'-'+cropX2+','+cropY2;
+                    sourceImagePath = './gif/source/' + element.objectId + '.gif';
+                    outputImagePath = './gif/output/' + element.objectId + '.gif';
+                    sourceSize = fs.statSync(sourceImagePath).size;
+                    // download image
+                    await downloadImageToDisk(element.image.contentUrl, outputImagePath);
+                    outputImageStats = fs.statSync(outputImagePath);
                 }
 
-                // additional check to see if resize is actually needed by calculating the full rendered image dimensions, without crop
-                fullWidth = (renderedImgWidth / ((1 - (cropProps.leftOffset + cropProps.rightOffset)) * 100)) * 100;
-                fullHeight = (renderedImgHeight / ((1 - (cropProps.topOffset + cropProps.bottomOffset)) * 100)) * 100;
-                console.log('Rendered image dimensions without crop: ' + Math.round(fullWidth) + 'x' + Math.round(fullHeight))
+                totalSourceSize += sourceSize
 
-                if ((fullWidth / imgWidth < 0.95 || fullHeight / imgHeight < 0.95) && (cropLine != "")){
-                    try{
-                        if (match) {
-                            await cropGif(outputImagePath, outputImagePath, cropLine, resizeLine);
-                        } else {
-                            await cropGif(sourceImagePath, outputImagePath, cropLine, resizeLine);
-                        }
-                    } catch (error) {
-                        console.log('err: ' + error);
+                // Display source preview
+                sourceUrl = element.image.contentUrl;
+
+                //log current filesize
+                sourceImageStats = fs.statSync(sourceImagePath);
+
+                //check image dimensions
+                imgDimensions = await sizeOf(sourceImagePath);
+                imgWidth = imgDimensions.width;
+                imgHeight = imgDimensions.height;
+
+                // set "trueScale", name I came up with for the actual scale when a image is 1:1 pixels in fullscreen presenting mode
+                const trueScaleX = 190.5; // 381/2 and 381x25 = 9525
+                const trueScaleY = 190.5;
+
+                // determine what resolution the image is actually rendered at in the slide
+                let renderedImgWidth = ((element.size.width.magnitude / 25) * element.transform.scaleX) / trueScaleX;
+                let renderedImgHeight = ((element.size.height.magnitude / 25) * element.transform.scaleY) / trueScaleY;
+
+                // declare resize/crop string to pass in the optimizeGif function
+                let resizeLine = '';
+                let cropLine = '';
+
+                // //determine if resizing of the image is required (when a image is placed at 0.95 scale or lower)
+                if (renderedImgWidth / imgWidth < 0.95 || renderedImgHeight / imgHeight < 0.95) {
+                    resizeLine = Math.round(renderedImgWidth) + 'x' + Math.round(renderedImgHeight);
+                }
+
+                if (element.image.imageProperties.hasOwnProperty('cropProperties')) {
+                    const cropProps = {
+                        leftOffset: 0, rightOffset: 0, topOffset: 0, bottomOffset: 0, // make sure all required props are in the object
+                        ...element.image.imageProperties.cropProperties // overwrite if necessary with props from google's object
+                    };
+
+                    // construct the cropLine to pass in the optimizeGif function
+                    cropX1 = Math.round(cropProps.leftOffset * imgWidth);
+                    cropY1 = Math.round(cropProps.topOffset * imgHeight);
+                    cropX2 = Math.round(imgWidth - (cropProps.rightOffset * imgWidth));
+                    cropY2 = Math.round(imgHeight - (cropProps.bottomOffset * imgHeight));
+
+                    // Address negative crop coords
+                    if ((parseInt(cropX1) || parseInt(cropY1)) < 0) {
+                        cropLine = ""
+                    } else {
+                        cropLine = cropX1 + ',' + cropY1 + '-' + cropX2 + ',' + cropY2;
                     }
-                    
-                } else {
-                    console.log('No resize required', socket);
+
+                    // additional check to see if resize is actually needed by calculating the full rendered image dimensions, without crop
+                    fullWidth = (renderedImgWidth / ((1 - (cropProps.leftOffset + cropProps.rightOffset)) * 100)) * 100;
+                    fullHeight = (renderedImgHeight / ((1 - (cropProps.topOffset + cropProps.bottomOffset)) * 100)) * 100;
+                    console.log('Rendered image dimensions without crop: ' + Math.round(fullWidth) + 'x' + Math.round(fullHeight))
+
+                    if ((fullWidth / imgWidth < 0.95 || fullHeight / imgHeight < 0.95) && (cropLine != "")) {
+                        try {
+                            if (match) {
+                                await cropGif(outputImagePath, outputImagePath, cropLine, resizeLine);
+                            } else {
+                                await cropGif(sourceImagePath, outputImagePath, cropLine, resizeLine);
+                            }
+                        } catch (error) {
+                            console.log('err: ' + error);
+                        }
+                    }
                 }
+
+                outputImageStats = fs.statSync(outputImagePath);
+
+                //log optimized filesize
+                optimizationPercentage = 100 - ((outputImageStats.size / sourceImageStats.size)*100);
+                outputSize += outputImageStats.size;
+                uploadedGifUrl = await slidesOptimizer.uploadFileToS3(outputImagePath);
+
+                //replace url in google slides
+                try{
+                    await slidesOptimizer.replaceImageUrl(presentationId, sourceImageId, uploadedGifUrl);
+                } catch (error) {
+                    console.error(error);
+                };
+                try{
+                    await fs.unlinkSync(sourceImagePath);
+                    await fs.unlinkSync(outputImagePath);
+                    await fs.unlinkSync('./src/public/gif/'+element.objectId+'_optimized.gif');
+                } catch (e) {};
+                
+                console.log('#' +(index+1)+ ' of '+ gifElements.length +', Input: ' + formatSizeUnits(sourceSize) + ', Output: ' + formatSizeUnits(outputImageStats.size) + ', Optimization: ' + Math.round(optimizationPercentage) + "%", socket);
+            } else {
+                console.log('#' +(index+1)+ ' of '+ gifElements.length);
             }
-            outputImageStats = fs.statSync(outputImagePath);
-
-            //log optimized filesize
-            optimizationPercentage = 100 - ((outputImageStats.size / sourceImageStats.size)*100);
-            outputSize += outputImageStats.size;
-            
-            uploadedGifUrl = await slidesOptimizer.uploadFileToS3(outputImagePath);
-
-            //replace url in google slides
-            try{
-                await slidesOptimizer.replaceImageUrl(presentationId, sourceImageId, uploadedGifUrl)
-            } catch (error) {
-                console.error(error);
-            };
-
-            console.log('#' +(index+1)+ ' of '+ gifElements.length +', Input: ' + formatSizeUnits(sourceSize) + ', Output: ' + formatSizeUnits(outputImageStats.size) + ', Optimization: ' + Math.round(optimizationPercentage) + "%, " + toHref(uploadedGifUrl, 'Link'), socket);
             resolve();
         }))
         await Promise.all(optimizeGifPromiseArray);
@@ -258,39 +242,50 @@ io.on('connection', async (socket) => {
 
     tokenData = await slidesOptimizer.verifyToken(msg.token)
     payload = tokenData.getPayload()
-    console.log(payload)
+
+    let newName = "Optimized copy of " + slidesData.data.title.match(/\|(.*)\|/).pop();
     
     // give permissions to target user
-    //await slidesOptimizer.changeOwnership(presentationId, payload['email']);
-
+    let ownership_res = await slidesOptimizer.changeOwnership(presentationId, payload['email'], newName);
+    if (ownership_res != '200'){
+        await slidesOptimizer.generateAccessToken();
+        await slidesOptimizer.changeOwnership(presentationId, payload['email'], newName);
+    }
+    socket.emit("finishProcess", {'link': 'https://docs.google.com/presentation/d/' + presentationId} );
     console.log("New Presentation URL:<br>" + toHref('https://docs.google.com/presentation/d/' + presentationId), socket)
-    //TODO: Remove this tmp function
-    //await slidesOptimizer.deleteSlides(presentationId);
     });
-
 });
 
-async function loadGifsInPresentation(url, socket){        
-    // get credentials, create if they don't exist
-    const credentials = await getCredentials('./creds.json');
-
-    // create new instance of class
+async function processDeck(msg, socket){        
+    socket.emit('DisplayTxt', "");
+    const credentials = await getCredentials('./creds.json');    
     const slidesOptimizer = new GoogleSlidesOptimizer(credentials);
 
+    tokenData = await slidesOptimizer.verifyToken(msg.token)
+    payload = tokenData.getPayload()
+
     //get original slides data
-    const presentationId = slidesOptimizer.getSlideIdFromUrl(url);
+    const presentationId = slidesOptimizer.getSlideIdFromUrl(msg.url);
     console.log('Received source slides with ID: ' + presentationId, socket)
 
     // copy source slides to new slides
-    const newSlides = await slidesOptimizer.copySlides(presentationId)
+    let newSlides = await slidesOptimizer.copySlides(presentationId, payload['email'])
+    if (newSlides == '401'){
+        await slidesOptimizer.generateAccessToken()
+        newSlides = await slidesOptimizer.copySlides(presentationId, payload['email'])
+    }
 
     // log URL to new slides
-    console.log('Copied source slides to new presentation with ID: ' + newSlides.id, socket)
+    console.log('Copied source slides to new presentation with ID: ' + newSlides, socket)
 
     // get all slides data
-    const slidesData = await slidesOptimizer.getSlides(newSlides.id);
+    const slidesData = await slidesOptimizer.getSlides(newSlides);
+    if (slidesData == '400' || slidesData == '500'){
+        socket.emit('noAccess');
+        return
+    }
 
-    // fish out all the images in slides data
+    // Fish out all the images in slides data
     const imageElements = slidesOptimizer.getImageElements(slidesData);
     console.log('Found images in slides:' + imageElements.length, socket);
 
@@ -315,14 +310,12 @@ async function loadGifsInPresentation(url, socket){
     // find all gifs in imageElements
     const progressBar = new cliProgress.SingleBar({}, cliProgress.Presets.shades_classic);
     progressBar.start(imageElements.length, 0);
-
     const pLimit = await import('p-limit'); // using this ESM package to limit concurrency of promises
     const limit = pLimit.default(100); // set limit to 100 promises at a time
 
     // function to run in each promise
     const inputPromise = async (imageElement) => {
         const isGif = await checkIfGif(imageElement.image.contentUrl)
-
         if (isGif) {
             return imageElement;
         }
@@ -340,34 +333,29 @@ async function loadGifsInPresentation(url, socket){
     })
 
     const imageCheckingResult = await Promise.all(imageCheckPromises); // run all promises with limited concurrency
-
     const gifElements = imageCheckingResult.filter(result => {
         return result !== 'not a gif'; // filter results
     })
-
     progressBar.stop();
 
     console.log('Found GIF images in slides:' + gifElements.length, socket);
+<<<<<<< HEAD
 >>>>>>> adds support for promises with limited concurrency
 
+=======
+>>>>>>> Application refactor
     let gifs = {};
-    let sourceSize = 0, outputSize = 0;
-
     console.log('Downloading gifs. Please wait.', socket);
+
     for (const [index, element] of gifElements.entries()) {
-            
+            console.log("Downloading "+(index+1)+" of "+gifElements.length, socket)
             const sourceImagePath = './gif/source/'+element.objectId+'.gif';
-            //const outputImagePath = './gif/output/'+element.objectId+'_optimized.gif';
-
-            // download image
+            transparency = element.image.imageProperties['transparency'];
             await downloadImageToDisk(element.image.contentUrl, sourceImagePath);
-
             // Display source preview
             const sourceUrl = element.image.contentUrl;
-
-            gifs[element.objectId] = {id:element.objectId, source:sourceUrl, output: sourceUrl, id:element.objectId, deckId:newSlides.id}
-
+            gifs[element.objectId] = {id:element.objectId, source:sourceUrl, output: sourceUrl, id:element.objectId, deckId:newSlides, opacity:transparency}
         }
-    console.log("Loading gif preview...", socket);
+    console.log("Retrieving GIFs. Please wait...", socket);
     if (socket) socket.emit('DisplayGif', { gifarray: gifs});
 }
