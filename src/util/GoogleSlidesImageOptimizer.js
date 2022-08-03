@@ -3,6 +3,9 @@ const fs = require("fs-extra");
 const AWS = require("aws-sdk");
 const path = require("path");
 const {OAuth2Client} = require('google-auth-library');
+const getCredentials = require("./getCredentials");
+const request = require('request');
+const { resolve } = require("path");
 
 class GoogleSlidesOptimizer {
 
@@ -22,14 +25,18 @@ class GoogleSlidesOptimizer {
 
         this.bucket = auth.aws.bucket;
         this.clientId = auth.google['client_id']
-
         this.slidesService = google.slides({version: 'v1', auth: this.auth});
         this.driveService = google.drive({version: 'v3', auth: this.auth});
         this.authClient = new OAuth2Client(auth.google['client_id']);
     }
 
     async getSlides(presentationId) {
-        return await this.slidesService.presentations.get({presentationId});
+        try {
+            let res =  await this.slidesService.presentations.get({presentationId});
+            return res
+        } catch (e) {
+            return e['response']['status']
+        };
     }
 
     getSlideIdFromUrl(url) {
@@ -38,95 +45,87 @@ class GoogleSlidesOptimizer {
         return id;
     }
 
-    async copySlides(presentationId) {
-        try {
-            const originalFile = await this.slidesService.presentations.get({presentationId});
+    async generateAccessToken() {
+        const creds = await getCredentials('./creds.json');
+        const client_id = creds['workato']['client_id'];
+        const client_secret = creds['workato']['client_secret']
 
-            const newName = "Optimized copy of " + originalFile.data.title;
-
-            const newFile = await new Promise((resolve) => {
-                this.driveService.files.copy({
-                    fileId: presentationId,
-                    supportsAllDrives: true,
-                    resource: {
-                        name: newName,
-                    },
-                }, (err, driveResponse) => {
-                    if (err) console.log(err)
-                    resolve(driveResponse.data);
-                });
-            });
-
-            const permission = { type: 'anyone', kind: 'drive#permission', role: 'writer' }
-
-            await new Promise((resolve) => {
-                this.driveService.permissions.create({
-                    fileId: newFile.id,
-                    supportsAllDrives: true,
-                    resource: permission,
-                }, (err, driveResponse) => {
-                    if (err) console.log(err)
-                    resolve(driveResponse.data);
-                });
-            })
-
-            return newFile;
-
-        } catch (e) {
-            console.log(e)
+        let data = {
+            grant_type: 'client_credentials',
+            client_id: client_id,
+            client_secret: client_secret,
         }
+
+        let res = request.post({
+            url: 'https://apim.workato.com/oauth2/token',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body:  JSON.stringify(data)
+        }, function(error, response, body){
+            if (response.statusCode == 200){
+                let rawdata = fs.readFileSync('./creds.json');
+                let creds = JSON.parse(rawdata);
+                let bod = JSON.parse(body)
+                console.log('new token: ' + bod['access_token'])
+                creds['workato']['access_key'] = bod['access_token']
+                let data = JSON.stringify(creds);
+                fs.writeFileSync('./creds.json', data);
+                return bod['access_token']
+            }
+        });
+
+    };
+
+    async copySlides(presentationId, email) {
+        const originalFile = await this.slidesService.presentations.get({presentationId});
+        const newName = "Optimized copy of " + originalFile.data.title;
+        const creds = await getCredentials('./creds.json');
+        let workato_token = creds['workato']['access_key']
+        
+        return await new Promise((resolve) => {
+            let data = {file_id: presentationId, requester_email: email};
+            let res = request.post({
+                url: 'https://apim.workato.com/mediamonks_api/labs-deck-optimmizer-v1/copy-presentation',
+                headers: {
+                    'Authorization': 'Bearer ' + workato_token,
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body:  JSON.stringify(data)
+            }, function(error, response, body){
+                if (response.statusCode != 200 ){
+                    resolve(response.statusCode);
+                } else {
+                    let bod = JSON.parse(body)
+                    resolve(bod['copy_file_id'])
+                }        
+            });
+        });
     }
 
-    async changeOwnership(presentationId, targetUserEmail){
-        try {
-            const res = await new Promise((resolve) => {
-                try{
-                    this.driveService.permissions.list({
-                        'fileId': presentationId
-                    }, (err, driveResponse) => {
-                        if (err) console.log(err)
-                        resolve(driveResponse.data);
-                    });
-                } catch (error) {console.log(error)}
+
+    async changeOwnership(presentationId, email, name){
+        const creds = await getCredentials('./creds.json');
+        let workato_token = creds['workato']['access_key'];
+        return await new Promise((resolve) => {
+            let res = request.post({
+                url: 'https://apim.workato.com/mediamonks_api/labs-deck-optimmizer-v1/transfer-file-ownership',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'Authorization': 'Bearer ' + workato_token,
+                },
+                body:  JSON.stringify({file_id: presentationId, email:email, notification_text: "string", move_to_root: true, file_name: name})
+            }, function(error, response, body){
+                resolve(response.statusCode); 
             });
-
-            console.log(res['permissions']);
-
-            // Iterate through permissions and make signed-in user the owner
-            res['permissions'].forEach(permission => {
-                if(permission['role'] == 'owner'){
-                    
-                    try {
-
-                        this.driveService.permissions.create({
-                            fileId: presentationId,
-                            supportsAllDrives: true,
-                            transferOwnership: true,
-                            resource: {role: 'owner', type: 'user', pendingOwner: true, 'emailAddress': targetUserEmail},
-                        });
-
-                        // this.driveService.permissions.update({
-                        //     'fileId': presentationId,
-                        //     'permissionId': permission['id'],
-                        //     'transferOwnership': true,
-                        //     'resource': { 'role': 'owner'}
-                        // });
-                    } catch (err) { console.log(err)}
-
-                }
-            })
-            
-
-        } catch (e) {
-            console.log(e)
-        }
+        });
     }
 
     async deleteSlides(id){
         const del = await new Promise((resolve) => {
             try{
                 this.driveService.files.delete({
-                    supportsTeamDrives: 'false',
+                    supportsTeamDrives: 'true',
                     fileId: id
                 }, (err, driveResponse) => {
                     if (err) console.log(err)
@@ -149,15 +148,12 @@ class GoogleSlidesOptimizer {
     }
 
     async uploadFileToS3(filePath) {
-
         const fileContent = fs.readFileSync(filePath);
-
         const params = {
             Bucket: this.bucket,
             Key: path.basename(filePath), // File name you want to save as in S3
             Body: fileContent
         };
-
         return await new Promise((resolve) => {
             this.s3.upload(params, function (err, data) {
                 if (err) {
@@ -166,7 +162,6 @@ class GoogleSlidesOptimizer {
                 resolve(data.Location);
             });
         });
-
     }
 
     async replaceImageUrl(presentationId, imageObjectId, newImageUrl) {
@@ -190,7 +185,6 @@ class GoogleSlidesOptimizer {
                     if (err) {
                         throw err;
                     }
-
                     resolve(response);
                 });
             } catch (e) {
@@ -200,15 +194,13 @@ class GoogleSlidesOptimizer {
     }
 
     async updateImageProperties(presentationId, imageObjectId, imagePropertiesObj) {
-
-        console.log('updating image properties!')
         console.log(imagePropertiesObj);
 
         let requests = [{
             updateImageProperties: {
                 objectId: imageObjectId,
                 imageProperties: imagePropertiesObj,
-                fields: 'cropProperties'
+                fields: 'outline, link'
             }
         }];
 
@@ -250,7 +242,6 @@ class GoogleSlidesOptimizer {
             Bucket: this.bucket,
             Key: path.basename(filePath), // File name you want to save as in S3
         };
-
         try {
             await this.s3.deleteObject(params).promise();
             console.log('Removed file from bucket');
@@ -266,7 +257,6 @@ class GoogleSlidesOptimizer {
         });
         return ticket
     }
-
 }
 
 module.exports = GoogleSlidesOptimizer;
