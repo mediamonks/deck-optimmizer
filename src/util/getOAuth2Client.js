@@ -48,13 +48,7 @@ module.exports = async function getOAuth2Client(clientId, clientSecret, redirect
               // Make sure to set the credentials on the OAuth2 client.
               oauthClient.setCredentials(r.tokens);
               console.info('Tokens acquired.');
-
-              // credentials.tokens = {};
-              // credentials.tokens.access_token = oAuth2Client.credentials.access_token;
-              // credentials.tokens.refresh_token = oAuth2Client.credentials.refresh_token;
-              // credentials.tokens.expiry_date = oAuth2Client.credentials.expiry_date;
-              // await fs.writeJson('./creds/credentials.json', credentials);
-
+              
               resolve(oauthClient);
             }
           } catch (e) {

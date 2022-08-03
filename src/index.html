@@ -7,53 +7,96 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;900&display=swap" rel="stylesheet">
     <link href="css/main.css" rel="stylesheet">
+    <script src="js/frontend.js"></script>
+    <script src="js/functionality.js"></script>
     <script src="https://apis.google.com/js/platform.js?onload=init" async defer></script>
     <script src="https://apis.google.com/js/platform.js" async defer></script>
     <meta name="google-signin-client_id" content="891852856749-q0k1uekqoku5oiqlgdps6ke07j3qe4q3.apps.googleusercontent.com">
-
 </head>
 
 <body>
     <div class="main">
-        
         <div id="accountbar">
-            <div class="g-signin2" data-onsuccess="onSignIn">    
-            </div>
-            <a href="#" id="signOutButton" onclick="signOut();">Sign out</a>
+            <button id="signOutButton" onclick="signOut();">Sign Out</a></button>
         </div>
 
         <div class="title"> deck optimmizer <sup class="beta">beta</sup> </div>
 
-        <div id="log">
-            <div id="expandarea">
-                <p>Process Log</p>
-                <img id="minimize" src="./minimize.png">
-                <img id="maximize" src="./maximize.png">
-            </div>
-            <ul id="messages"></ul>
+        <div id="welcome">
+            <h2>Welcome! Before you optimize your deck please read the instructions before proceeding!</h2>
+            This optimmizer tool was developed to reduce the size of GIFs in a Google Slides deck by creating a <b>copy deck</b>
+            with optimized GIFs replacing the originals.<br><br>
+            Due to the limitations of Google Slides the GIFs may not always look 100% the same as the original, nor does the
+            copy keep any record of comments or tasks.<br>
+            Please be aware that we take no responsibility for any changes made to decks.<br><br>
+            <h2>Sign in with your Google Account before proceeding, if you are already signed in please press 'continue' below. </h2>
+            <div class="g-signin2" id="signIn" data-onsuccess="onSignIn"></div>
+            <button type="button" id="beginButton" onclick="displayMain()">Continue</button>
         </div>
 
-        <div class="helpTxt">
-            First, share the deck with<br>
-            deck-optimmizer@deck-optimmizer.iam.gserviceaccount.com<br><br>
-
-            Then, enter the URL in the field below and hit 'Optimize'.
+        <div id="helpTxt">
+            <div id="instructImageContainer">
+                <img src="./img/instructions.png" alt="" id="instructionsGraphic">
+            </div>
+            <div id="instructTxt">
+                <h2 id="instructiontTitle">We will need access for optimization!</h2>
+                <ul>
+                    <li>1. Copy the following email addresses, you’ll need them for step 3:</li>
+                    <li id="copyContainer">
+                        <div id="shareEmail">
+                            <textarea type="text" rows="1" id="shareEmailTxt">deck-optimmizer@deck-optimmizer.iam.gserviceaccount.com&#13;&#10; utl-workato@mediamonks.com</textarea>
+                        </div>
+                        <div id="copyButton" onclick="copyText()">
+                            <img id="copyIcon" src="./img/content_copy.png">
+                            Copy
+                        </div>
+                    </li>
+                    <li>2. Click the share button in the upper right corner of the deck.</li>
+                    <li>3. Paste the copied email addresses and make sure to grant “editor” access.</li>
+                    <li>4. Share the deck. </li>
+                    <li>5. Copy the URL of the deck, you’ll need this for the final step.</li>
+                </ul>
+            </div>
         </div>
 
         <form class='form' id="form" action="">
-            <input id="input" autocomplete="off" />
-            <button class="optimize">Optimize</button>
+            <label>Finally, paste the URL of the deck below and hit “Optimize”.</label>
+            <div id="optimizeContainer">
+                <input id="input" autocomplete="off"/>
+                <button class="optimize">Optimize</button>
+            </div>
         </form>
 
+        <div id="log">
+            <ul id="messages"></ul>
+        </div>
 
         <form id="optimizeChoice">
-            <input type="radio" name="optimizeChoice" value="auto" id="AutoOptimize" onclick=DisplayAuto()>
-            <label for="auto">Auto-Optimize</label>
-            <input type="radio" name="optimizeChoice" value="manual" id="ManualOptimize" onclick=DisplayManual()>
-            <label for="manual">Optimize Manually</label>
+            <div id="optimizeChoiceContainer">
+                <input type="radio" name="optimizeChoice" value="auto" id="AutoOptimize" onclick=DisplayAuto()>
+                <label for="auto" id="autoLabel" onclick="toggleSelection(event)">Auto-Optimize</label>
+                <input type="radio" name="optimizeChoice" value="manual" id="ManualOptimize" onclick=DisplayManual()>
+                <label for="manual" id="manLabel" onclick="toggleSelection(event)">Optimize Manually</label>
+            </div>
         </form>
 
-        <br>
+        <div id="choiceContainer">
+            <div id="instructions">
+                <h2 id="instructionHeader">Choose your compression settings</h2>
+                <p id="instructionText">
+                    <ol id="instructList">
+                        <li>Set your lossy compression:<br>
+                            This will alter image colours to shrink output file size at the cost of artifacts and noise.<br><br>
+                        </li>
+                        <li>Set the colour range:<br>
+                            This will reduce the number of distinct colors in each GIF <br><br>
+                        </li>
+                        <li id="step3">When you’re finished, click ‘Apply Sesttings’<br><br></li>
+                    </ol>
+                </p>
+            </div>
+        </div>
+
         <div id="optimizePanel">
             <ul id="listHeader">
                 <li>Original</li>
@@ -62,239 +105,79 @@
             </ul>
         </div>
 
+        <p id="previewTxt">Retrieving GIFs...<br>Depending on the amount of GIFs in your deck this may take a few minutes. </p>
+
         <div id="optionsContainer">
             <form id="optionsForm" action="">
-                <label for="">Apply lossy compression?</label>
-                <input type="checkbox" id="applyLossy" onchange="displaySlider('applyLossy', 'displayCompFactor')">
-                <br>
-                
+                <input type="checkbox" id="applyLossy">
+                <label for="">Lossy compression:</label>
                 <div id="displayCompFactor">
-                    <label for="factor">Compression Factor:</label>
                     <label for="factor" id="displayFactor">30</label>
                     <input type="range" min="0" max="250" value="30" step="5" class="slider" id="factor" oninput="updateSliderValue('factor', 'displayFactor')">
                 </div>
                 <br>
-                
-                <label for="">Apply colour correction?</label>
-                <input type="checkbox" id="applyColourCorrect" onchange="displaySlider('applyColourCorrect', 'displayColourRange')">
-                <br>
-                
+                <input type="checkbox" id="applyColourCorrect">
+                <label for="">Colour range:</label>
                 <div id="displayColourRange">
-                    <label for="">Colour range:</label>
                     <label for="range" id="displayRange">60</label>
                     <input type="range" min="2" max="256" value="60" step="8" class="slider" id="colourRange" oninput="updateSliderValue('colourRange', 'displayRange')">
                 </div>
                 <br>
-
-                <label for="">Adjust frame rate?</label>
-                <input type="checkbox" id="adjustFrameRate" onchange="displaySlider('adjustFrameRate', 'displayFrameRate')">
-                <br>
-                
-                <div id="displayFrameRate">
-                    <label for="">Frame rate:</label>
-                    <label for="frameRate" id="displayframeRate">30</label>
-                    <input type="range" min="5" max="100" value="30" step="5" class="slider" id="frameRate" oninput="updateSliderValue('frameRate', 'displayframeRate')">
-                </div>
-                <br>
-
-                <button type="button" onclick="optimizeGif(event)">Apply</button>
-
+                <button type="button" onclick="optimizeGif(event)" id="applyButton">Apply Settings</button>
             </form>
         </div>
 
         <div id="processOptions">
             <button type="button" onclick="cancelOptimization(event)" id="cancelBtn">Cancel</button>
-            <button type="button" onclick="updateDeck(event)" id="finishBtn">Finish</button>
+            <button type="button" onclick="updateDeck(event)" id="finishBtn">Finalize deck</button>
+            <button type="button" onclick="location.reload()" id="restart">Optimize another deck</button>
         </div>
-
     </div>
 
     <div class="footer">deck optimmizer beta v0.2 <a target="_blank" href="https://github.com/mirkovw/deck-optimmizer">source</a></div>
-
+    
     <script src="/socket.io/socket.io.js"></script>
     <script>
-        var socket = io();
         var input = document.getElementById('input');
+        var count;
+        var socket = io();
 
         form.addEventListener('submit', function (e) {
             e.preventDefault();
             if (input.value) {
                 document.querySelector('#form').remove();
-                document.querySelector('.helpTxt').innerHTML = 'Would you like to run an auto optimization or choose tune each gif manually?';
-
-                document.querySelector('#optimizeChoice').style.display = 'block';
-
-                socket.emit('presentationId', input.value);
+                document.querySelector('#helpTxt').innerHTML = 'Optimize all the GIFs in your deck before sharing.';
+                document.getElementById("helpTxt").style.display = "block";
+                document.getElementById("helpTxt").style.fontSize = "18px";
+                document.querySelector('#optimizeChoice').style.display = 'flex';
+                document.getElementById("autoLabel").click();
+                socket.emit('processDeck', { 'url': input.value, 'token': window.sessionStorage.getItem('google-session') });
                 input.value = '';
             }
         });
+       
+        socket.on('noAccess', async function (){
+            let txtcontainer = document.getElementById('previewTxt');
+            document.getElementById('optimizeChoice').style.display = 'none';
+            document.getElementById('helpTxt').style.display = 'none';
+            txtcontainer.innerHTML = "You do not have access to this deck. You can optimize another deck by pressing 'cancel' below, or refreshing the page."
+        })
 
-        document.getElementById("expandarea").addEventListener("click", toggleLog);
-
-        async function toggleLog(){
-            let minimize = document.getElementById('minimize');
-            let maximize = document.getElementById('maximize');
-            let messages = document.getElementById('messages');
-
-            if (minimize.style.display == "block"){
-                maximize.style.display = "block";
-                minimize.style.display = "none";
-                messages.style.display = "none";
-            } else {
-                minimize.style.display = "block";
-                maximize.style.display = "none";
-                messages.style.display = "block";
-            }
-        }
-
-        function onSignIn(googleUser) {
-            var profile = googleUser.getBasicProfile();
-            var id_token = googleUser.getAuthResponse().id_token;
-            window.sessionStorage.setItem('google-session', id_token);
-            document.getElementById("signOutButton").style.display = "block";
-        }
-
-        function signOut() {
-            var auth2 = gapi.auth2.getAuthInstance();
-            auth2.signOut().then(function () {
-                console.log('User signed out.');
-                document.getElementById("signOutButton").style.display = "none";
-            });
-        }
-        
-        async function displayOptions(event){
-                //clear on every gif clicked
-                var source = document.getElementById('source');
-                var dest = document.getElementById('dest');
-                try{
-                    source.id = "";
-                    dest.id = "";
-                } catch {};
-                
-                var gif = event.target;
-                var optionsColumn = gif.parentElement.nextSibling;
-                var optionsContainer = document.querySelector('#optionsContainer');
-                var outputGif = optionsColumn.nextSibling.firstChild;
-                
-                optionsColumn.append(optionsContainer);
-                optionsContainer.style.display = 'block';
-
-                gif.id = 'source';
-                outputGif.id = 'dest';
-            };
-
-        async function optimizeGif(event){
-            var sourceGif = document.getElementById('source');
-            var destGif = document.getElementById('dest');
-
-            var applyLossy = document.querySelector('#applyLossy').checked;
-            var factor = document.getElementById('factor').value;
-            var applyColourCorrect = document.querySelector('#applyColourCorrect').checked;
-            var colourRange = document.getElementById('colourRange').value;
-            var adjustFrameRate = document.querySelector('#adjustFrameRate').checked;
-            var frameRate = document.getElementById('frameRate').value;
-
-            var auto = document.querySelector('#AutoOptimize').checked;
-            
-            if (auto){
-                gifElements = document.querySelectorAll('[gifid]');
-                
-                let minimize = document.getElementById('minimize');
-                let maximize = document.getElementById('maximize');
-                let messages = document.getElementById('messages');
-                optimizeArray = [];
-                
-                document.getElementById("optionsForm").style.display = "none";
-                minimize.style.display = "block";
-                maximize.style.display = "none";
-                messages.style.display = "block";
-
-                gifElements.forEach(element => {
-                    sourceGif = element.getAttribute('src')  
-                    gifid = element.getAttribute('gifid')
-                    optimizeArray.push(new Promise(async (resolve) => {
-                        socket.emit('applyOptimizeSettings', {'auto':auto, 'applyLossy':applyLossy, 'factor':factor, 'applyColourCorrect':applyColourCorrect, 'colourRange':colourRange, 'adjustFrameRate':adjustFrameRate, 'frameRate':frameRate, 'gifId':gifid, 'src':sourceGif});
-                        resolve();
-                    }))
-                });
-                await Promise.all(optimizeArray);
-
-            } else {
-                socket.emit('applyOptimizeSettings', {'auto':auto, 'applyLossy':applyLossy, 'factor':factor, 'applyColourCorrect':applyColourCorrect, 'colourRange':colourRange, 'adjustFrameRate':adjustFrameRate, 'frameRate':frameRate, 'gifId':sourceGif.getAttribute('gifId'), 'src':sourceGif.src});
-            }
-        };
-
-
-        function displaySlider(checkboxID, target){
-            // update display of slider
-            var checkbox = document.getElementById(checkboxID);
-            var target = document.getElementById(target);
-            if (checkbox.checked == true){
-                target.style.display = 'block';
-            } else {
-                target.style.display = 'none';
-            }
-        };
-
-        function updateSliderValue(sliderId, target){
-            var slider = document.getElementById(sliderId);
-            var target = document.getElementById(target);
-            target.innerHTML = slider.value;
-        };
-
-        function DisplayAuto() {
-            parent = document.getElementById('optimizeChoice');
-            container = document.querySelector('#optionsContainer')
-            parent.after(container);
-
-            document.querySelector('#optimizePanel').style.display = 'none';
-            container.style.display = 'block';
-            document.querySelector('#processOptions').style.display = 'block';
-        };
-
-        function DisplayManual() {
-            document.querySelector('#optimizePanel').style.display = 'block';
-            document.querySelector('#optionsContainer').style.display = 'none';
-            document.querySelector('#processOptions').style.display = 'block';
-        };
-
-        function updateDeck(event){
-            gifElements = document.querySelectorAll('[gifid]');
-            deckid = gifElements[0].getAttribute('deckid');
-
-            var gifData = {};
-
-            gifElements.forEach(element => {
-                gifData[element.getAttribute('gifid')] = element.getAttribute('src')                
-            });
-
-            let googletoken = window.sessionStorage.getItem('google-session');
-
-            socket.emit('updateCopyDeck', {'gifData':gifData, 'deckid':deckid, 'token': googletoken});
-        };
-
-        function cancelOptimization(event){
-            // delete all stored gifs & copy of slides
-            gifElements = document.querySelectorAll('[gifid]');
-            deckid = gifElements[0].getAttribute('deckid');
-
-            var gifIds = [];
-
-            gifElements.forEach(element => {
-                gifIds.push(element.getAttribute('gifid'))
-            });
-
-            socket.emit('deleteGifs', {'gifIds':gifIds, 'deckid':deckid});
-            location.reload();
-        };
-
-        socket.on('replaceGif', async function(msg){
+        socket.on('replaceGif', async function (msg) {
             //assign timestamp to src to refresh img (does not refresh img if src is the same url) 
             document.getElementById('dest').src = (msg.output + '?random=' + new Date().getTime());
         });
 
+        socket.on('DisplayTxt', async function (msg){
+            document.getElementById('previewTxt').style.display = "block";
+        })
+
         socket.on('DisplayGif', function (msg) {
-            for (const [key, val] of Object.entries(msg.gifarray)){
+            document.getElementById('previewTxt').style.display = "none";
+            document.getElementById('choiceContainer').style.display = "flex";
+            document.getElementById('log').style.display = "none";
+
+            for (const [key, val] of Object.entries(msg.gifarray)) {
                 var targetArea = document.getElementById('optimizePanel');
                 var ul = document.createElement('ul');
                 var li = document.createElement('li');
@@ -305,6 +188,7 @@
                 gif.src = val['source'];
                 gif.setAttribute('gifId', val['id']);
                 gif.setAttribute('deckId', val['deckId']);
+                gif.setAttribute('transparency', val['opacity']);
                 li.appendChild(gif);
 
                 // Options
@@ -322,20 +206,31 @@
                 gif.addEventListener("click", displayOptions, false);
                 targetArea.appendChild(ul);
             };
-            //socket.emit("update message", {data: });
+
             var item = document.createElement('li');
             item.innerHTML = "Preview loaded.";
             messages.insertBefore(item, messages.firstChild);
         });
 
-        socket.on('update message', function(msg) {
+        socket.on('optimizationCompleted', function (msg) {
+            current_count = parseInt(window.sessionStorage.getItem('optimizationCount'));
+            total_count = parseInt(window.sessionStorage.getItem('optimizationLength'));
+            window.sessionStorage.setItem('optimizationCount', current_count + 1);
+        });
+
+        socket.on('finishProcess', function (msg) {
+            document.getElementById('previewTxt').innerHTML = "Process completed! You can find an optimized copy of the deck here: <br>" + msg.link;
+            document.getElementById('previewTxt').style.display = 'block';
+            document.getElementById('cancelBtn').style.display = "none";
+            document.getElementById('restart').style.display = "inline-block";
+        })
+
+        socket.on('update message', function (msg) {
             var item = document.createElement('li');
             item.innerHTML = msg.data;
-            //messages.appendChild(item);
             messages.insertBefore(item, messages.firstChild);
             console.log(msg.data)
-    });
+        });
     </script>
 </body>
-
 </html>

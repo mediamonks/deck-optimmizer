@@ -1,7 +1,7 @@
 const {execFile} = require("child_process");
 const gifsicle = require("gifsicle");
 
-module.exports = async function optimizeGif( sourceImagePath, outputImagePath, applyLossy, factor, applyColourCorrect, colourRange, adjustFrameRate, frameRate ) {
+module.exports = async function optimizeGif( sourceImagePath, outputImagePath, applyLossy, factor, applyColourCorrect, colourRange) {
     // http://www.lcdf.org/gifsicle/man.html
 
     const optimizationArray = [];

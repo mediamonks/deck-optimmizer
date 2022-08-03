@@ -24,8 +24,17 @@ module.exports = async function getCredentials( credsFilePath ) {
             }
         })
 
-
         const aws_answers = await inquirer.prompt(aws_questions);
+
+        const workato_questions = ['client_id', 'client_secret'].map(question => {
+            return {
+                type: 'input',
+                name: question,
+                message: question
+            }
+        })
+
+        const workato_answers = await inquirer.prompt(workato_questions);
 
         credentials = {
             'google': {
@@ -35,6 +44,10 @@ module.exports = async function getCredentials( credsFilePath ) {
             },
             'aws': {
                 ...aws_answers
+            },
+            'workato': {
+                client_id: workato_answers.client_id,
+                client_secret: workato_answers.client_secret
             }
         }
         await fs.writeJson(credsFilePath, credentials);
