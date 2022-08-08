@@ -3,9 +3,7 @@ const gifsicle = require("gifsicle");
 
 module.exports = async function cropGif(sourceImagePath, outputImagePath, cropLine, resizeLine) {
     const cropArray = [];
-    console.log(cropLine);
-    console.log(resizeLine);
-    
+
     if (cropLine !== '') {
         cropArray.push('--crop='+cropLine.toString());
     }

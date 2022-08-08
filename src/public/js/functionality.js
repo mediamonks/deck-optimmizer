@@ -32,6 +32,7 @@ function updateDeck(event) {
     deckid = gifElements[0].getAttribute('deckid');
     triggerLog()
     document.getElementById('instructionText').innerHTML = "Cropping & replacing gifs in deck.<br>Please wait.";
+    console.log("Preparing deck. Please wait.", socket)
 
     gifElements.forEach(element => {
         gifData[element.getAttribute('gifid')] = element.getAttribute('src')
