@@ -246,6 +246,7 @@ ul li {
 }
 
 #log{
+    display: none;
     position: fixed;
     bottom: 23px;
     right: 28px;

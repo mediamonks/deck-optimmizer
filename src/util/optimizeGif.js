@@ -10,13 +10,11 @@ module.exports = async function optimizeGif( sourceImagePath, outputImagePath, a
     if (applyLossy) {
         // apply desired level of lossiness
         optimizationArray.push('--lossy='+factor.toString());
-        console.log('lossy applied');
     };
     
     if (applyColourCorrect) {
         // apply color correction
         optimizationArray.push('--colors='+colourRange.toString());
-        console.log('color correction applied');
     };
 
     return new Promise((resolve) => {

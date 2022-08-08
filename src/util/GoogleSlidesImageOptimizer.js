@@ -67,7 +67,6 @@ class GoogleSlidesOptimizer {
                 let rawdata = fs.readFileSync('./creds.json');
                 let creds = JSON.parse(rawdata);
                 let bod = JSON.parse(body)
-                console.log('new token: ' + bod['access_token'])
                 creds['workato']['access_key'] = bod['access_token']
                 let data = JSON.stringify(creds);
                 fs.writeFileSync('./creds.json', data);
