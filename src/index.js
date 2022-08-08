@@ -54,16 +54,12 @@ io.on('connection', async (socket) => {
             await downloadImageToDisk(sourceUrl, sourceImagePath);
 
             //optimize gif and remove source image after its done
-            console.log('Optimizing gif...', socket);
             await optimizeGif(sourceImagePath, outputImagePath, msg.applyLossy, msg.factor, msg.applyColourCorrect, msg.colourRange);
-            console.log('Optimization complete.', socket);
 
             await fs.copyFile(outputImagePath, './src/public/gif/' + msg.gifId + '_optimized.gif');
 
             if (msg.auto == false) {
                 if (socket) socket.emit('replaceGif', { 'output': './gif/' + msg.gifId + '_optimized.gif' });
-            } else {
-                console.log("Optimized #"+msg.count+" of "+ msg.total, socket)
             }
             socket.emit('optimizationCompleted', 'completed');
         }
@@ -127,6 +123,7 @@ io.on('connection', async (socket) => {
         optimizeGifPromiseArray.push(new Promise(async (resolve) => {
             if (!element.image.imageProperties['transparency']){
                 sourceImageId = element.objectId;
+                // Check if 
                 match = optimizedGifs.some(e => e.includes(sourceImageId));
                 if (match) {
                     sourceImagePath = './gif/source/' + element.objectId + '.gif';
@@ -137,7 +134,8 @@ io.on('connection', async (socket) => {
                     outputImagePath = './gif/output/' + element.objectId + '.gif';
                     sourceSize = fs.statSync(sourceImagePath).size;
                     // download image
-                    await downloadImageToDisk(element.image.contentUrl, outputImagePath);
+                    //await downloadImageToDisk(element.image.contentUrl, outputImagePath);
+                    await fs.copyFile(sourceImagePath, outputImagePath);
                     outputImageStats = fs.statSync(outputImagePath);
                 }
 
@@ -206,6 +204,14 @@ io.on('connection', async (socket) => {
                             console.log('err: ' + error);
                         }
                     }
+                }else {
+                    try {
+                        if (match) {
+                            await cropGif(outputImagePath, outputImagePath, cropLine, resizeLine);
+                        } else {
+                            await cropGif(sourceImagePath, outputImagePath, cropLine, resizeLine);
+                        }
+                    } catch (error) {}
                 }
 
                 outputImageStats = fs.statSync(outputImagePath);
@@ -229,7 +235,7 @@ io.on('connection', async (socket) => {
                 
                 console.log('#' +(index+1)+ ' of '+ gifElements.length +', Input: ' + formatSizeUnits(sourceSize) + ', Output: ' + formatSizeUnits(outputImageStats.size) + ', Optimization: ' + Math.round(optimizationPercentage) + "%", socket);
             } else {
-                console.log('#' +(index+1)+ ' of '+ gifElements.length);
+                console.log('#' +(index+1)+ ' of '+ gifElements.length, socket);
             }
             resolve();
         }))

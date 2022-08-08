@@ -215,11 +215,15 @@
         socket.on('optimizationCompleted', function (msg) {
             current_count = parseInt(window.sessionStorage.getItem('optimizationCount'));
             total_count = parseInt(window.sessionStorage.getItem('optimizationLength'));
+            var item = document.createElement('li');
+            item.innerHTML = "Optimized #"+(current_count+1)+" of "+ total_count;
+            messages.insertBefore(item, messages.firstChild);
             window.sessionStorage.setItem('optimizationCount', current_count + 1);
         });
 
         socket.on('finishProcess', function (msg) {
-            document.getElementById('previewTxt').innerHTML = "Process completed! You can find an optimized copy of the deck here: <br>" + msg.link;
+            const toHref = (url, label) => '<a target="_blank" href="'+url+'">' + (label || url) + '</a>';
+            document.getElementById('previewTxt').innerHTML = "Process completed! You can find an optimized copy of the deck here: <br>" + toHref(msg.link);
             document.getElementById('previewTxt').style.display = 'block';
             document.getElementById('cancelBtn').style.display = "none";
             document.getElementById('restart').style.display = "inline-block";
