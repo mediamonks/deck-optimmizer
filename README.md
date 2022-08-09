@@ -1,54 +1,132 @@
-# Media.Monks Deck Optimmizer
-Node.js server application that downloads, optimizes and replaces all GIF files in a given Google Slides presentation.
 
-## Installation
-Clone this repo to a folder of your choice and install the dependencies.
+<div id="top"></div>
 
-## Basic usage
-`npm start`
+<!-- PROJECT SHIELDS -->
+<!--
+*** Using markdown "reference style" links for readability.
+*** Reference links are enclosed in brackets [ ] instead of parentheses ( ).
+*** See the bottom of this document for the declaration of the reference variables
+*** for contributors-url, forks-url, etc. This is an optional, concise syntax you may use.
+*** https://www.markdownguide.org/basic-syntax/#reference-style-links
+-->
 
-You will need to provide some credentials:
-- Google 
-  - Service Alias Email
-  - Private Key
-- AWS
-  - Key
-  - Secret
-  - Bucket
-
-Which are saved in a local file for future use.
-
-# Changelog
-All notable changes to this project will be documented in this file.
-
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-
-## [To do]
-
-## [0.2] - 2022-05-10
-### Added
-
-- Support for 'weird' crops, like circles or even arrows
-- Automatic resizing of images that have are scaled to less than 95%
+<!-- TABLE OF CONTENTS -->
+<details>
+  <summary>Table of Contents</summary>
+  <ol>
+    <li>
+      <a href="#about-the-project">About The Project</a>
+      <ul>
+        <li><a href="#built-with">Built With</a></li>
+      </ul>
+    </li>
+    <li>
+      <a href="#getting-started">Getting Started</a>
+      <ul>
+        <li><a href="#prerequisites">Prerequisites</a></li>
+        <li><a href="#installation">Installation</a></li>
+      </ul>
+    </li>
+    <li><a href="#usage">Usage</a></li>
+    <li><a href="#contributing">Contributing</a></li>
+    <li><a href="#license">License</a></li>
+  </ol>
+</details>
 
 
-## [0.11] - 2022-04-26
-### Added
-- App now runs on [server] with a simple front end
-- Big performance increase by making tasks run parallel instead of sequentially:
-  - looping through slide, looking for GIF files 
-  - optimizing GIF files
-  - uploading and replacing URLs 
-- Users can now fill in the URL to the slides, instead of the ID
-- Support for cropped GIFs
 
-## [0.1] - 2022-04-20
-### Added
-- Proof of concept working, very high level blanket approach to optimizing images (everything same settings)
+<!-- ABOUT THE PROJECT -->
+## About The Project
+The purpose of this tool is to optimize GIF files within Google Slides to reduce the deck file size and improve loading time.
 
-[To do]: https://github.com/mediamonks/deck-optimmizer/issues
-[0.2]: https://github.com/mediamonks/deck-optimmizer/releases/tag/0.2
-[0.11]: https://github.com/mediamonks/deck-optimmizer/releases/tag/0.11
-[0.1]: https://github.com/mediamonks/deck-optimmizer/releases/tag/0.1
-[server]: https://deck-optimmizer.eu.dev.monkapps.com/
+From a technical standpoint it's a Node.js server application that makes a copy of the Google Slides Presentation, downloads all it's GIFs, optimizes them with Gifsicle, hosts the GIFs in an s3 bucket, replaces the optimized GIFs in the presentation and transfers ownership to the user.
+
+
+
+<p align="right">(<a href="#top">back to top</a>)</p>
+
+
+
+### Built With
+
+ [![Node.js]][Node-url]
+[![Gifsicle]][Gifsicle-url]
+
+
+<p align="right">(<a href="#top">back to top</a>)</p>
+
+
+
+<!-- GETTING STARTED -->
+## Getting Started
+
+
+### Prerequisites
+A `creds.json` file with access credentials for a Google service account, AWS, and Workato. 
+
+
+
+### Installation
+
+1. Clone the repo
+   ```sh
+   git clone https://github.com/mediamonks/deck-optimmizer
+   ```
+2. Install NPM packages
+   ```sh
+   npm install
+   ```
+3. Enter your API credentials in `creds.js`
+```
+    {
+    "google":{
+    	"client_email":"YOUR_CLIENT_EMAIL",
+    	"client_id":"YOUR_CLIENT_ID",
+    	"private_key":"YOUR_PRIVATE_KEY"
+    	},
+    "aws":{
+    	"accessKeyId":"YOUR_ACCESS_KEY_ID",
+	   	"secretAccessKey":"YOUR_SECRET_ACCESS_KEY",
+    	"bucket":"YOUR_BUCKET_ID"
+    	},
+    "workato":{
+    	"client_id":"YOUR_CLIENT_ID",
+    	"client_secret":"YOUR_CLIENT_SECRET",
+    	"access_key":"YOUR_ACCESS_KEY"
+    	}
+    }
+```
+ 4. Start the Node.Js webserver
+```
+    node src/index.js 
+```
+
+<p align="right">(<a href="#top">back to top</a>)</p>
+
+<!-- CONTRIBUTING -->
+## Contributing
+
+Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
+
+If you have a suggestion that would make this better, please fork the repo and create a pull request. 
+
+<p align="right">(<a href="#top">back to top</a>)</p>
+
+
+<!-- LICENSE -->
+## License
+
+Distributed under the MIT License. See `LICENSE.txt` for more information.
+
+<p align="right">(<a href="#top">back to top</a>)</p>
+
+
+
+
+<!-- MARKDOWN LINKS & IMAGES -->
+<!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
+[Node.js]: https://img.shields.io/badge/N-Node.Js-green
+[Node-url]: https://nodejs.org/en/
+[Gifsicle]: https://img.shields.io/badge/G-Gifsicle-green
+[Gifsicle-url]: https://www.lcdf.org/gifsicle/
+[Repo-url]:https://github.com/mediamonks/deck-optimmizer
