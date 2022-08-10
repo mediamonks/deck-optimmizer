@@ -139,7 +139,7 @@ class GoogleSlidesOptimizer {
         slides.data.slides.forEach(slide => {
             if (slide.hasOwnProperty('pageElements')) {
                 slide.pageElements.forEach(pageElement => {
-                    if (pageElement.image) elementsArray.push(pageElement);
+                    if (pageElement.image && !pageElement.image.imageProperties['transparency']) elementsArray.push(pageElement);
                 });
             }
         })
