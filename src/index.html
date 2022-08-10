@@ -51,10 +51,10 @@
                             Copy
                         </div>
                     </li>
-                    <li>2. Click the share button in the upper right corner of the deck.</li>
+                    <li>2. Click the "Share" button in the upper right corner of the deck.</li>
                     <li>3. Paste the copied email addresses and make sure to grant “editor” access.</li>
-                    <li>4. Share the deck. </li>
-                    <li>5. Copy the URL of the deck, you’ll need this for the final step.</li>
+                    <li>4. Copy the URL of the deck, you’ll need this for the final step.</li>
+                    <li>5. Share the deck.</li>
                 </ul>
             </div>
         </div>
@@ -62,8 +62,8 @@
         <form class='form' id="form" action="">
             <label>Finally, paste the URL of the deck below and hit “Optimize”.</label>
             <div id="optimizeContainer">
-                <input id="input" autocomplete="off"/>
-                <button class="optimize">Optimize</button>
+                <input id="input" autocomplete="off" onpaste="document.getElementById('optimizeBtn').style.background='#F8F9FA'"/>
+                <button id="optimizeBtn" class="optimize">Optimize</button>
             </div>
         </form>
 
@@ -76,7 +76,7 @@
                 <input type="radio" name="optimizeChoice" value="auto" id="AutoOptimize" onclick=DisplayAuto()>
                 <label for="auto" id="autoLabel" onclick="toggleSelection(event)">Auto-Optimize</label>
                 <input type="radio" name="optimizeChoice" value="manual" id="ManualOptimize" onclick=DisplayManual()>
-                <label for="manual" id="manLabel" onclick="toggleSelection(event)">Optimize Manually</label>
+                <label for="manual" id="manLabel" onclick="toggleSelection(event)">Optimize Individually</label>
             </div>
         </form>
 
@@ -91,7 +91,7 @@
                         <li>Set the colour range:<br>
                             This will reduce the number of distinct colors in each GIF <br><br>
                         </li>
-                        <li id="step3">When you’re finished, click ‘Apply Sesttings’<br><br></li>
+                        <li id="step3">When you’re finished, click ‘Apply Settings’<br><br></li>
                     </ol>
                 </p>
             </div>
@@ -105,25 +105,25 @@
             </ul>
         </div>
 
-        <p id="previewTxt">Retrieving GIFs...<br>Depending on the amount of GIFs in your deck this may take a few minutes. </p>
+        <p id="previewTxt"></p>
 
         <div id="optionsContainer">
             <form id="optionsForm" action="">
-                <input type="checkbox" id="applyLossy">
+                <input type="checkbox" id="applyLossy" checked>
                 <label for="">Lossy compression:</label>
                 <div id="displayCompFactor">
-                    <label for="factor" id="displayFactor">30</label>
-                    <input type="range" min="0" max="250" value="30" step="5" class="slider" id="factor" oninput="updateSliderValue('factor', 'displayFactor')">
+                    <label for="factor" id="displayFactor">50</label>
+                    <input type="range" min="0" max="250" value="50" step="-1" class="slider" id="factor" oninput="updateSliderValue('factor', 'displayFactor')">
                 </div>
                 <br>
-                <input type="checkbox" id="applyColourCorrect">
+                <input type="checkbox" id="applyColourCorrect" checked>
                 <label for="">Colour range:</label>
                 <div id="displayColourRange">
-                    <label for="range" id="displayRange">60</label>
-                    <input type="range" min="2" max="256" value="60" step="8" class="slider" id="colourRange" oninput="updateSliderValue('colourRange', 'displayRange')">
+                    <label for="range" id="displayRange">256</label>
+                    <input type="range" min="256" max="2" value="256" class="slider" id="colourRange" oninput="updateSliderValue('colourRange', 'displayRange')">
                 </div>
                 <br>
-                <button type="button" onclick="optimizeGif(event)" id="applyButton">Apply Settings</button>
+                <button type="button" onclick="optimizeGif(event)" id="applyButton">Optimize</button>
             </form>
         </div>
 
@@ -160,7 +160,7 @@
             let txtcontainer = document.getElementById('previewTxt');
             document.getElementById('optimizeChoice').style.display = 'none';
             document.getElementById('helpTxt').style.display = 'none';
-            txtcontainer.innerHTML = "You do not have access to this deck. You can optimize another deck by pressing 'cancel' below, or refreshing the page."
+            txtcontainer.innerHTML = "Error gaining access to the deck, please try again."
         })
 
         socket.on('replaceGif', async function (msg) {
@@ -170,6 +170,7 @@
 
         socket.on('DisplayTxt', async function (msg){
             document.getElementById('previewTxt').style.display = "block";
+            document.getElementById('previewTxt').innerHTML = msg.txt;
         })
 
         socket.on('DisplayGif', function (msg) {
@@ -188,7 +189,6 @@
                 gif.src = val['source'];
                 gif.setAttribute('gifId', val['id']);
                 gif.setAttribute('deckId', val['deckId']);
-                gif.setAttribute('transparency', val['opacity']);
                 li.appendChild(gif);
 
                 // Options
