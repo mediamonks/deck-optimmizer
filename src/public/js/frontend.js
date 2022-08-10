@@ -60,6 +60,10 @@ async function optimizeGif(event) {
             const element = gifElements[index];
             sourceGif = element.getAttribute('src')
             gifid = element.getAttribute('gifid')
+<<<<<<< HEAD
+=======
+            // transparency = element.getAttribute('transparency');
+>>>>>>> adds optimized updateCopyDeck
 
             if (ids.includes(gifid)) { }
             else {
@@ -75,7 +79,11 @@ async function optimizeGif(event) {
         await Promise.all(optimizeArray);
 
     } else {
+<<<<<<< HEAD
         socket.emit('applyOptimizeSettings', { 'auto': auto, 'applyLossy': applyLossy, 'factor': factor, 'applyColourCorrect': applyColourCorrect, 'colourRange': colourRange, 'gifId': sourceGif.getAttribute('gifId'), 'src': sourceGif.src});
+=======
+        socket.emit('applyOptimizeSettings', { 'auto': auto, 'applyLossy': applyLossy, 'factor': factor, 'applyColourCorrect': applyColourCorrect, 'colourRange': colourRange, 'gifId': sourceGif.getAttribute('gifId'), 'src': sourceGif.src });
+>>>>>>> adds optimized updateCopyDeck
     }
     document.getElementById('finishBtn').style.display = "inline-block";
 };
