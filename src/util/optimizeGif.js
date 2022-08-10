@@ -6,7 +6,6 @@ module.exports = async function optimizeGif( sourceImagePath, outputImagePath, a
 
     const optimizationArray = [];
 
-
     if (applyLossy) {
         // apply desired level of lossiness
         optimizationArray.push('--lossy='+factor.toString());
@@ -24,14 +23,10 @@ module.exports = async function optimizeGif( sourceImagePath, outputImagePath, a
                 '-o', outputImagePath,
                 sourceImagePath
             ], (error, stdout) => {
-
-            if (error) {
-                console.log(error);
-            }
             resolve(stdout);
-            return
-            }).timeout(7500);
-        } catch (error) {};
-        
+            });
+        } catch (error) {
+            resolve();
+        };
     });
 }

@@ -77,11 +77,11 @@ class GoogleSlidesOptimizer {
     };
 
     async copySlides(presentationId, email) {
+        // TODO: Fix user not having access to deck
         const originalFile = await this.slidesService.presentations.get({presentationId});
         const newName = "Optimized copy of " + originalFile.data.title;
         const creds = await getCredentials('./creds.json');
         let workato_token = creds['workato']['access_key']
-        
         return await new Promise((resolve) => {
             let data = {file_id: presentationId, requester_email: email};
             let res = request.post({
