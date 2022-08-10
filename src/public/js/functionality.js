@@ -15,6 +15,7 @@ function onSignIn(googleUser) {
     window.sessionStorage.setItem('google-session', id_token);
     document.getElementById("signOutButton").style.display = "block";
     document.getElementById("beginButton").style.display = "inline-flex";
+    displayMain()
 }
 
 function signOut() {

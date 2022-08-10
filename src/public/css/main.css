@@ -7,7 +7,7 @@ body {
 
 .main {
     position: absolute;
-    width: 1200px;
+    width: 1250px;
     left: 50%;
     transform: translateX(-50%);
     text-align: center;
@@ -114,11 +114,14 @@ ul li {
     display: flex;
     flex-direction: row;
     align-items: center;
-    padding: 12px 16px;
-    gap: 8px;
-    height: 25px;
-    background: #5F6368;
+    background: rgb(95, 99, 104);
     border-radius: 4px;
+    font-style: normal;
+    font-weight: 400;
+    line-height: 15px;
+    text-align: center;
+    letter-spacing: -0.02em;
+    color: #202124;
 }
 
 #choiceContainer{
@@ -215,7 +218,9 @@ ul li {
     color: #FFFFFF;
     border-style: none;
     border-color: none;
-    width: 300px;
+    width: 425px;
+    height: 30px;
+    text-align: center;
 }
 
 #signOutButton{

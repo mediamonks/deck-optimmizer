@@ -60,12 +60,11 @@ async function optimizeGif(event) {
             const element = gifElements[index];
             sourceGif = element.getAttribute('src')
             gifid = element.getAttribute('gifid')
-            transparency = element.getAttribute('transparency');
 
             if (ids.includes(gifid)) { }
             else {
                 optimizeArray.push(new Promise(async (resolve) => {
-                    socket.emit('applyOptimizeSettings', { 'auto': auto, 'applyLossy': applyLossy, 'factor': factor, 'applyColourCorrect': applyColourCorrect, 'colourRange': colourRange, 'gifId': gifid, 'src': sourceGif, 'transparency': transparency, 'count': index/2, 'total': gifElements.length/2 });
+                    socket.emit('applyOptimizeSettings', { 'auto': auto, 'applyLossy': applyLossy, 'factor': factor, 'applyColourCorrect': applyColourCorrect, 'colourRange': colourRange, 'gifId': gifid, 'src': sourceGif, 'count': index/2, 'total': gifElements.length/2 });
                     resolve();
                 }))
             }
@@ -76,7 +75,7 @@ async function optimizeGif(event) {
         await Promise.all(optimizeArray);
 
     } else {
-        socket.emit('applyOptimizeSettings', { 'auto': auto, 'applyLossy': applyLossy, 'factor': factor, 'applyColourCorrect': applyColourCorrect, 'colourRange': colourRange, 'gifId': sourceGif.getAttribute('gifId'), 'src': sourceGif.src, 'transparency': sourceGif.getAttribute('transparency') });
+        socket.emit('applyOptimizeSettings', { 'auto': auto, 'applyLossy': applyLossy, 'factor': factor, 'applyColourCorrect': applyColourCorrect, 'colourRange': colourRange, 'gifId': sourceGif.getAttribute('gifId'), 'src': sourceGif.src});
     }
     document.getElementById('finishBtn').style.display = "inline-block";
 };
@@ -147,7 +146,7 @@ function DisplayManual() {
     document.getElementById('instructions').style.display = 'block';
     document.getElementById('finishBtn').style.display = 'inline-block';
 
-    if (document.getElementById("autostep")){} else{
+    if (document.getElementById("autoStep")){} else{
         var ol = document.getElementById("instructList");
         var li = document.createElement("li");
         li.id = "autoStep"
