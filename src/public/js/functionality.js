@@ -27,13 +27,15 @@ function signOut() {
 
 function updateDeck(event) {
     var gifData = {};
+    document.getElementById('loader').style.display = "inline-block";
+    document.getElementById('previewTxt').style.display = "block";
+    document.getElementById('previewTxt').innerHTML = "Updating deck. Please wait."
     let googletoken = window.sessionStorage.getItem('google-session');
 
     gifElements = document.querySelectorAll('[gifid]');
     deckid = gifElements[0].getAttribute('deckid');
     triggerLog()
-    document.getElementById('instructionText').innerHTML = "Cropping & replacing gifs in deck.<br>Please wait.";
-    console.log("Preparing deck. Please wait.", socket)
+    
 
     gifElements.forEach(element => {
         gifData[element.getAttribute('gifid')] = element.getAttribute('src')
