@@ -136,6 +136,30 @@ ul li {
     margin: 3px;
 }
 
+#colourRange{
+    transform: rotateY(180deg);
+}
+
+.slider{
+    -webkit-appearance: none;
+  background: #111;
+  outline: none;
+  border-radius: 15px;
+  overflow: hidden;
+  box-shadow: inset 0 0 5px rgba(0, 0, 0, 1);
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: #111;
+  cursor: pointer;
+  border: 4px solid #F8F9FA;
+  box-shadow: -407px 0 0 400px #111;
+}
+
 #applyButton,
 #beginButton,
 #cancelBtn,
@@ -248,6 +272,10 @@ ul li {
     color: #202124;
     top: 50%;
     left: 50%;
+}
+
+#loader{
+    width: 50px;
 }
 
 #log{
@@ -423,6 +451,7 @@ textarea {
     background: #ff0000;
 }
 
+#loader,
 #helpTxt,
 #previewTxt,
 #form,
