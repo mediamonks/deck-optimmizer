@@ -1,0 +1,470 @@
+body {
+    margin: 0;
+    font-family: 'Roboto', sans-serif;
+    background-color: #000;
+    color: #fff
+}
+
+.main {
+    position: absolute;
+    width: 1250px;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    background-color: #000;
+    height: 100%
+}
+
+.g-signin2{
+    display: flex;
+    justify-content: center;
+}
+
+
+#beginButton{
+    display: none;
+    margin-top: 20px;
+    justify-content: center;
+}
+
+.title {
+    font-family: 'Roboto', sans-serif;
+    font-size: 40px;
+    font-weight: 900;
+    padding-top: 50px;
+
+}
+
+.title sup {
+    font-size: 15px;
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    color: #BDC1C6;
+    line-height: 15px;
+}
+
+.helpTxt {
+    padding-top: 20px;
+    position: absolute;
+    left: 760px;
+    top: calc(50% - 240px/2 - 36px);
+    font-family: 'Work Sans';
+    font-style: normal;
+    font-weight: 400;
+    font-size: 13px;
+    line-height: 15px;
+    align-items: center;
+    letter-spacing: -0.02em;
+    color: #FFFFFF;
+}
+
+#instructImageContainer{
+    width: 50%;
+}
+
+#instructionsGraphic{
+    width: 95%;
+}
+
+#instructTxt ul{
+    text-align: justify;
+}
+
+#instructTxt li {
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+
+#helpTxt{
+    align-items: center;
+    letter-spacing: -0.02em;
+    color: #FFFFFF;
+    padding-top: 20px;
+}
+
+ul li {
+    list-style: none;
+}
+
+#listHeader{
+    margin: 0;
+}
+
+.form {
+    padding-top: 20px;
+    display: inline-block;
+}
+
+#input{
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    padding: 0px 16px;
+    gap: 8px;
+    width: 225;
+    height: 25px;
+    background: #3C4043;
+    border: 1px solid #DADCE0;
+    border-radius: 4px;
+    margin-right: 10px;
+}
+
+.optimize{
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    background: rgb(95, 99, 104);
+    border-radius: 4px;
+    font-style: normal;
+    font-weight: 400;
+    line-height: 15px;
+    text-align: center;
+    letter-spacing: -0.02em;
+    color: #202124;
+}
+
+#choiceContainer{
+    display: flex;
+    text-align: justify;
+    justify-content: center;
+}
+
+#displayFactor,
+#displayRange{
+    font-size: large;
+    margin: 3px;
+}
+
+#colourRange{
+    transform: rotateY(180deg);
+}
+
+.slider{
+    -webkit-appearance: none;
+  background: #111;
+  outline: none;
+  border-radius: 15px;
+  overflow: hidden;
+  box-shadow: inset 0 0 5px rgba(0, 0, 0, 1);
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: #111;
+  cursor: pointer;
+  border: 4px solid #F8F9FA;
+  box-shadow: -407px 0 0 400px #111;
+}
+
+#applyButton,
+#beginButton,
+#cancelBtn,
+#finishBtn,
+#restart{
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    width: 170px;
+    height: 38px;
+    left: 602px;
+    background: #F8F9FA;
+    border-radius: 4px;
+    border: none;
+    font-weight: 400;
+    font-size: 13px;
+    line-height: 15px;
+    color: #202124;
+}
+
+#optimizeContainer{
+    display: flex;
+    justify-content: center;
+    padding-top: 10px;
+}
+
+#instructions{
+    display: block;
+    font-size: 18px;
+    line-height: 21px;
+    letter-spacing: -0.02em;
+    color: #FFFFFF;
+    margin-left: 75px;
+}
+
+#log li{
+    font-size: 15px;
+}
+
+#optimizeContainer input{
+    color: #FFFFFF;
+}
+
+#form label{
+    letter-spacing: -0.02em;
+    color: #FFFFFF;
+}
+
+#copyContainer{
+    position: relative;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    padding: 4px 8px;
+    gap: 8px;
+}
+
+#shareEmail{
+    font-family: 'Work Sans';
+    font-style: normal;
+    font-weight: 400;
+    line-height: 12px;
+    text-align: center;
+    letter-spacing: -0.02em;
+    color: #FFFFFF;
+    flex: none;
+    order: 0;
+    flex-grow: 0;
+    border-style: dashed;
+    border-color: #F8F9FA;
+    padding: 10px;
+    width: fit-content;
+    border-radius: 4px;
+}
+
+#shareEmailTxt{
+    background: #1E1E1E;
+    color: #FFFFFF;
+    border-style: none;
+    border-color: none;
+    width: 425px;
+    height: 30px;
+    text-align: center;
+}
+
+#signOutButton{
+    float: right;
+}
+
+#copyButton{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#copyButton,
+#beginButton,
+#signOutButton{
+    width: 79px;
+    height: 32px;
+    background: #F8F9FA;
+    border-radius: 4px;
+    font-style: normal;
+    font-weight: 400;
+    line-height: 15px;
+    text-align: center;
+    letter-spacing: -0.02em;
+    color: #202124;
+    top: 50%;
+    left: 50%;
+}
+
+#loader{
+    width: 50px;
+}
+
+#log{
+    display: none;
+    position: fixed;
+    bottom: 23px;
+    right: 28px;
+    z-index: 9;
+    background-color: black;
+    border: 10px solid #232323;
+}
+
+#log p {
+    padding: 0;
+    margin: 0;
+}
+
+#maximize{
+    display: block;
+}
+
+#expandarea{
+    justify-content: flex-end;
+    align-items: center;
+    display: flex;
+    flex-flow: row;
+    display: none;
+}
+
+#optionsForm{
+    margin-top: 2em;
+    margin-bottom: 2em;
+    background: #3C4043;
+    border-radius: 4px;
+    padding: 12px;
+}
+#optionsForm label{
+    vertical-align: super;
+}
+#applyLossy,
+#applyColourCorrect {
+    background: #F8F9FA;
+    width: 24px;
+    height: 24px;
+    flex: none;
+    order: 0;
+    flex-grow: 0;
+}
+
+#applyLossy:hover,
+#applyColourCorrect:hover{
+    background-color: #ccc;
+}
+
+#messages {
+    list-style-type: none;
+    font-size: 10px;
+    text-align: left;
+    margin: 0;
+    padding: 0;
+    padding-top: 10px;
+    display: none;
+    max-height: 200px;
+    overflow-x: auto;
+    z-index: 9;
+}
+
+#messages a {
+    color: #fff;
+}
+
+#messages>li {
+    padding: 0.5rem 1rem;
+    z-index: 9;
+}
+
+#messages>li:nth-child(odd) {
+    background: #232323;
+}
+
+#messages>li:nth-child(even) {
+    background: #000;
+}
+
+#overlay{
+    position: fixed; 
+    display: none;
+    width: 100%;
+    height: 100%;
+    z-index: 2; 
+    background-color: #000;
+}
+
+.footer {
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+    font-size: 8px;
+    text-align: right;
+}
+
+#optimizeChoice{
+    justify-content: center;
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+#manLabel,
+#autoLabel{
+    padding-left: 3px;
+    padding-right: 3px;
+}
+
+input[type="radio"]{
+    position: fixed;
+    opacity: 0;
+    pointer-events: none;
+}
+
+#optimizeChoiceContainer{
+    background-color: #3C4043;
+    border-radius: 4px;
+    padding: 5px;
+}
+
+#optimizePanel ul {
+    display: flex;
+    list-style-type: none;
+    padding-left: 40px;
+    padding-right: 40px;
+}
+
+#optimizePanel ul li {
+    width: 30%;
+}
+
+#optimizePanel ul:nth-child(odd) {
+    background: #191919;
+}
+
+#optimizePanel ul li:nth-child(2){
+    width: 40%;
+}
+
+li>img{
+    width: 100%;
+    height: 100%; 
+    object-fit: contain;
+}
+
+::-webkit-scrollbar-track{
+  -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.3);
+  border-radius: 10px;
+  background-color: #232323;
+}
+
+::-webkit-scrollbar{
+  width: 12px;
+  background-color: #232323;
+}
+
+::-webkit-scrollbar-thumb{
+  border-radius: 10px;
+  -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,.3);
+  background-color: #BDC1C6;
+}
+
+textarea {
+    resize: none;
+}
+
+#finishBtn{
+    background: #ff0000;
+}
+
+#loader,
+#helpTxt,
+#previewTxt,
+#form,
+#signOutButton,
+#finishBtn,
+#restart,
+#instructions, 
+#AutoPreviewTxt,
+#minimize,
+#optimizeChoice,
+#optimizePanel,
+#optionsContainer, 
+#processOptions,
+#beginButton{
+    display: none;
+}
