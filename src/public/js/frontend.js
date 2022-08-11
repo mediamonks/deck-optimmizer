@@ -11,9 +11,12 @@ function toggleSelection(event) {
     var click = event.target;
     if (click.id == "autoLabel") {
         document.getElementById("AutoOptimize").checked = true;
+        document.getElementById("applyButton").innerHTML = "Optimize all";
+        document.getElementById("finishBtn").style.display = "none";
         DisplayAuto()
     } else {
         document.getElementById("ManualOptimize").checked = true;
+        document.getElementById("applyButton").innerHTML = "Optimize";
         DisplayManual()
     }
 }
@@ -26,6 +29,7 @@ async function displayOptions(event) {
     var optionsColumn = gif.parentElement.nextSibling;
     var optionsContainer = document.querySelector('#optionsContainer');
     var outputGif = optionsColumn.nextSibling.firstChild;
+    document.getElementById('applyButton').innerHTML = "Optimize"
     
     try {
         source.id = "";
@@ -46,6 +50,13 @@ async function optimizeGif(event) {
     var applyColourCorrect = document.querySelector('#applyColourCorrect').checked;
     var colourRange = document.getElementById('colourRange').value;
     var auto = document.querySelector('#AutoOptimize').checked;
+
+    var button = document.getElementById('applyButton')
+    var img = document.createElement('img');
+    img.src = "./img/loader1.gif"
+    img.style.width = "40px"
+    button.innerHTML = ""
+    button.appendChild(img)
 
     if (auto) {
         triggerLog()
@@ -77,7 +88,6 @@ async function optimizeGif(event) {
     } else {
         socket.emit('applyOptimizeSettings', { 'auto': auto, 'applyLossy': applyLossy, 'factor': factor, 'applyColourCorrect': applyColourCorrect, 'colourRange': colourRange, 'gifId': sourceGif.getAttribute('gifId'), 'src': sourceGif.src});
     }
-    document.getElementById('finishBtn').style.display = "inline-block";
 };
 
 function triggerLog(){
@@ -117,6 +127,7 @@ function DisplayAuto() {
     parent = document.getElementById('instructions');
     container = document.querySelector('#optionsContainer')
     parent.before(container);
+    document.getElementById('optionsForm').style.display.style = "block";
 
     document.getElementById("applyButton").style.display = "inline-block";
     document.querySelector('#optimizePanel').style.display = 'none';
