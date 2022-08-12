@@ -60,7 +60,7 @@ io.on('connection', async (socket) => {
         await downloadImageToDisk(sourceUrl, sourceImagePath);
 
         //optimize gif and remove source image after its done
-        await optimizeGif(sourceImagePath, outputImagePath, msg.applyLossy, msg.factor, msg.applyColourCorrect, msg.colourRange);
+        await optimizeGif(sourceImagePath, outputImagePath, msg.factor, msg.colourRange);
 
         await fs.copyFile(outputImagePath, './src/gif/' + msg.gifId + '_optimized.gif');
 

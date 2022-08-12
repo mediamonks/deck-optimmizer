@@ -451,6 +451,10 @@ textarea {
     background: #ff0000;
 }
 
+#optionsContainer{
+    text-align: center;
+}
+
 #loader,
 #helpTxt,
 #previewTxt,

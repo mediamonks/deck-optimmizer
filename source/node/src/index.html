@@ -29,7 +29,7 @@
             Due to the limitations of Google Slides the GIFs may not always look 100% the same as the original, nor does the
             copy keep any record of comments or tasks.<br>
             Please be aware that we take no responsibility for any changes made to decks.<br><br>
-            <h2>Sign in with your Google Account before proceeding, if you are already signed in please press 'continue' below. </h2>
+            <h2><b>Sign in with your Google Account before proceeding</b></h2>
             <div class="g-signin2" id="signIn" data-onsuccess="onSignIn"></div>
             <button type="button" id="beginButton" onclick="displayMain()">Continue</button>
         </div>
@@ -93,7 +93,7 @@
                             This will reduce (if possible) the number of distinct colors in each GIF.<br>
                             256 is the max amount of colors possible in a GIF, 2 is the lowest.<br><br>
                         </li>
-                        <li id="step3">When you’re finished, click ‘Apply Settings’<br><br></li>
+                        <li id="step3">When you’re finished, click ‘Optimize' or 'Optimize all'.<br><br></li>
                     </ol>
                 </p>
             </div>
@@ -114,18 +114,23 @@
 
         <div id="optionsContainer">
             <form id="optionsForm" action="">
-                <input type="checkbox" id="applyLossy" checked>
+                <h2>Compression settings:</h2>
+                <!-- <input type="checkbox" id="applyLossy" checked> -->
                 <label for="">Lossy compression:</label>
+                <label for="factor" id="displayFactor">50</label>
                 <div id="displayCompFactor">
-                    <label for="factor" id="displayFactor">50</label>
+                    <label for="factor">Min</label>
                     <input type="range" min="0" max="256" value="50" step="-1" class="slider" id="factor" oninput="updateSliderValue('factor', 'displayFactor')">
+                    <label for="factor">Max</label>
                 </div>
                 <br>
-                <input type="checkbox" id="applyColourCorrect" checked>
+                <!-- <input type="checkbox" id="applyColourCorrect" checked> -->
                 <label for="">Colour range:</label>
+                <label for="range" id="displayRange">256</label>
                 <div id="displayColourRange">
-                    <label for="range" id="displayRange">256</label>
+                    <label for="range">Min</label>
                     <input type="range" min="2" max="256" value="256" class="slider" id="colourRange" oninput="updateSliderValue('colourRange', 'displayRange')">
+                    <label for="range">Max</label>
                 </div>
                 <br>
                 <button type="button" onclick="optimizeGif(event)" id="applyButton">Optimize</button>

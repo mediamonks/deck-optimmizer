@@ -45,9 +45,9 @@ async function displayOptions(event) {
 
 async function optimizeGif(event) {
     var sourceGif = document.getElementById('source');
-    var applyLossy = document.querySelector('#applyLossy').checked;
+    //var applyLossy = document.querySelector('#applyLossy').checked;
     var factor = document.getElementById('factor').value;
-    var applyColourCorrect = document.querySelector('#applyColourCorrect').checked;
+    //var applyColourCorrect = document.querySelector('#applyColourCorrect').checked;
     var colourRange = document.getElementById('colourRange').value;
     var auto = document.querySelector('#AutoOptimize').checked;
 
@@ -75,7 +75,7 @@ async function optimizeGif(event) {
             if (ids.includes(gifid)) { }
             else {
                 optimizeArray.push(new Promise(async (resolve) => {
-                    socket.emit('applyOptimizeSettings', { 'auto': auto, 'applyLossy': applyLossy, 'factor': factor, 'applyColourCorrect': applyColourCorrect, 'colourRange': colourRange, 'gifId': gifid, 'src': sourceGif, 'count': index/2, 'total': gifElements.length/2 });
+                    socket.emit('applyOptimizeSettings', { 'auto': auto, 'factor': factor, 'colourRange': colourRange, 'gifId': gifid, 'src': sourceGif, 'count': index/2, 'total': gifElements.length/2 });
                     resolve();
                 }))
             }
@@ -86,7 +86,7 @@ async function optimizeGif(event) {
         await Promise.all(optimizeArray);
 
     } else {
-        socket.emit('applyOptimizeSettings', { 'auto': auto, 'applyLossy': applyLossy, 'factor': factor, 'applyColourCorrect': applyColourCorrect, 'colourRange': colourRange, 'gifId': sourceGif.getAttribute('gifId'), 'src': sourceGif.src});
+        socket.emit('applyOptimizeSettings', { 'auto': auto, 'factor': factor, 'colourRange': colourRange, 'gifId': sourceGif.getAttribute('gifId'), 'src': sourceGif.src});
     }
 };
 
