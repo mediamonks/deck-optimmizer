@@ -33,14 +33,13 @@ console.log = function (d, socket) {
     });
 })();
 
-app.use(express.static(__dirname + '/src/'));
+app.use(express.static(__dirname + '/../frontend/'));
 
 app.get('/', (req, res) => {
-    res.sendFile(__dirname + '/src/index.html');
+    res.sendFile(__dirname + '/../frontend/index.html');
 });
 
-app.use('/gif', express.static('/src/gif/'));
-app.use('/src/gif/', express.static('/src/gif/'));
+app.use('/gif', express.static('/../frontend/gif/'));
 
 io.on('connection', async (socket) => {
     socket.on('processDeck', async msg => {
@@ -62,7 +61,7 @@ io.on('connection', async (socket) => {
         //optimize gif and remove source image after its done
         await optimizeGif(sourceImagePath, outputImagePath, msg.applyLossy, msg.factor, msg.applyColourCorrect, msg.colourRange);
 
-        await fs.copyFile(outputImagePath, './src/gif/' + msg.gifId + '_optimized.gif');
+        await fs.copyFile(outputImagePath, '../frontend/gif/' + msg.gifId + '_optimized.gif');
 
         if (msg.auto == false) {
             if (socket) socket.emit('replaceGif', {'output': './gif/' + msg.gifId + '_optimized.gif'});
@@ -122,7 +121,7 @@ io.on('connection', async (socket) => {
 
         await Promise.all(checkIfGifPromiseArray);
 
-        let optimizedGifs = fs.readdirSync("src/gif/");
+        let optimizedGifs = fs.readdirSync("../frontend/gif/");
 
         let totalSourceSize = 0, outputSize = 0;
 
@@ -246,7 +245,7 @@ io.on('connection', async (socket) => {
             try {
                 await fs.unlinkSync(sourceImagePath);
                 await fs.unlinkSync(outputImagePath);
-                await fs.unlinkSync('src/gif/' + element.objectId + '_optimized.gif');
+                await fs.unlinkSync('../frontend/gif/' + element.objectId + '_optimized.gif');
             } catch (e) {
             }
             ;
