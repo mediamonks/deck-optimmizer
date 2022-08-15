@@ -264,7 +264,8 @@ io.on('connection', async (socket) => {
 
 
         // log that it's done
-        console.log('Done. Total optimization: ' + formatSizeUnits(totalSourceSize - outputSize), socket);
+        let filesize_reduction = totalSourceSize - outputSize
+        console.log('Done. Total optimization: ' + formatSizeUnits(filesize_reduction), socket);
 
         let tokenData = await slidesOptimizer.verifyToken(msg.token)
         let payload = tokenData.getPayload()
@@ -272,10 +273,10 @@ io.on('connection', async (socket) => {
         let newName = "Optimized copy of " + slidesData.data.title.match(/\|(.*)\|/).pop();
 
         // give permissions to target user
-        let ownership_res = await slidesOptimizer.changeOwnership(presentationId, payload['email'], newName);
+        let ownership_res = await slidesOptimizer.changeOwnership(presentationId, payload['email'], newName, gifElements.length, filesize_reduction);
         if (ownership_res != '200') {
             await slidesOptimizer.generateAccessToken();
-            await slidesOptimizer.changeOwnership(presentationId, payload['email'], newName);
+            await slidesOptimizer.changeOwnership(presentationId, payload['email'], newName, gifElements.length, filesize_reduction);
         }
         socket.emit("finishProcess", {'link': 'https://docs.google.com/presentation/d/' + presentationId});
         console.log("New Presentation URL:<br>" + toHref('https://docs.google.com/presentation/d/' + presentationId), socket)
