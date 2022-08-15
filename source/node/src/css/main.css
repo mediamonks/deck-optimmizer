@@ -360,6 +360,21 @@ ul li {
     background: #000;
 }
 
+#previewTxt > a {
+    border-style: dashed;
+    border-color: #F8F9FA;
+    color: yellow;
+    padding: 7px;
+}
+
+#cancelBtn{
+    background: #ff1a1a;
+}
+
+#applyButton{
+    background: #00c700;
+}
+
 #overlay{
     position: fixed; 
     display: none;

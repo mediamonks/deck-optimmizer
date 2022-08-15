@@ -238,7 +238,7 @@
         socket.on('finishProcess', function (msg) {
             const toHref = (url, label) => '<a target="_blank" href="'+url+'">' + (label || url) + '</a>';
             let deckurl = toHref(msg.link)
-            document.getElementById('previewTxt').innerHTML = "Process complete! You are now the owner of the optimized deck & will recieve an email confirmation.<br> You can find a copy of the deck in your personal drive or by following this link: <br>" + deckurl;
+            document.getElementById('previewTxt').innerHTML = "Process complete! You are now the owner of the optimized deck & will recieve an email confirmation.<br> You can find a copy of the deck in your personal drive or by following this link: <br><br>" + deckurl;
             document.getElementById('previewTxt').style.display = 'block';
             document.getElementById('cancelBtn').style.display = "none";
             document.getElementById('restart').style.display = "inline-block";
