@@ -115,7 +115,6 @@ class GoogleSlidesOptimizer {
                     'Authorization': 'Bearer ' + workato_token,
                 },
                 body:  JSON.stringify({file_id: presentationId, email:email, notification_text: "string", move_to_root: true, file_name: name, analytics_gif_count:gif_count, analytics_filesize_reduction: reduction})
-                body:  JSON.stringify({file_id: presentationId, email:email, notification_text: "string", move_to_root: true, file_name: name})
             }, function(error, response, body){
                 resolve(response.statusCode); 
             });
