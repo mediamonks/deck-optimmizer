@@ -86,12 +86,10 @@
                 <p id="instructionText">
                     <ol id="instructList">
                         <li>Set your lossy compression:<br>
-                            This will alter image colours to shrink output file size at the cost of artifacts and noise.<br>
-                            0 compression means no change will be applied, 256 is the highest compression.<br><br>
+                            This will alter image colours to shrink output file size at the cost of artifacts and noise.<br><br>
                         </li>
                         <li>Set the colour range:<br>
-                            This will reduce (if possible) the number of distinct colors in each GIF.<br>
-                            256 is the max amount of colors possible in a GIF, 2 is the lowest.<br><br>
+                            This will reduce the number of distinct colors in each GIF <br><br>
                         </li>
                         <li id="step3">When you’re finished, click ‘Apply Settings’<br><br></li>
                     </ol>
@@ -99,18 +97,15 @@
             </div>
         </div>
 
-        <div id="autoSettingsContainer"></div>
-
         <div id="optimizePanel">
             <ul id="listHeader">
-                <li>Click GIFs below to optimize</li>
-                <li>Settings will appear here</li>
-                <li>Optimized GIF preview</li>
+                <li>Original</li>
+                <li></li>
+                <li>Preview</li>
             </ul>
         </div>
 
         <p id="previewTxt"></p>
-        <img id="loader" src="./img/loader.gif">
 
         <div id="optionsContainer">
             <form id="optionsForm" action="">
@@ -118,14 +113,14 @@
                 <label for="">Lossy compression:</label>
                 <div id="displayCompFactor">
                     <label for="factor" id="displayFactor">50</label>
-                    <input type="range" min="0" max="256" value="50" step="-1" class="slider" id="factor" oninput="updateSliderValue('factor', 'displayFactor')">
+                    <input type="range" min="0" max="250" value="50" step="-1" class="slider" id="factor" oninput="updateSliderValue('factor', 'displayFactor')">
                 </div>
                 <br>
                 <input type="checkbox" id="applyColourCorrect" checked>
                 <label for="">Colour range:</label>
                 <div id="displayColourRange">
                     <label for="range" id="displayRange">256</label>
-                    <input type="range" min="2" max="256" value="256" class="slider" id="colourRange" oninput="updateSliderValue('colourRange', 'displayRange')">
+                    <input type="range" min="256" max="2" value="256" class="slider" id="colourRange" oninput="updateSliderValue('colourRange', 'displayRange')">
                 </div>
                 <br>
                 <button type="button" onclick="optimizeGif(event)" id="applyButton">Optimize</button>
@@ -145,26 +140,22 @@
     <script>
         var input = document.getElementById('input');
         var count;
-        
         var socket = io();
 
         form.addEventListener('submit', function (e) {
             e.preventDefault();
             if (input.value) {
                 document.querySelector('#form').remove();
+                document.querySelector('#helpTxt').innerHTML = 'Optimize all the GIFs in your deck before sharing.';
+                document.getElementById("helpTxt").style.display = "block";
+                document.getElementById("helpTxt").style.fontSize = "18px";
+                document.querySelector('#optimizeChoice').style.display = 'flex';
+                document.getElementById("autoLabel").click();
                 socket.emit('processDeck', { 'url': input.value, 'token': window.sessionStorage.getItem('google-session') });
                 input.value = '';
             }
         });
        
-        socket.on("TriggerDisplayOptions", async function (){
-            document.querySelector('#helpTxt').innerHTML = 'Optimize all the GIFs in your deck before sharing.';
-            document.getElementById("helpTxt").style.display = "block";
-            document.getElementById("helpTxt").style.fontSize = "18px";
-            document.querySelector('#optimizeChoice').style.display = 'flex';
-            document.getElementById("autoLabel").click();
-        });
-
         socket.on('noAccess', async function (){
             let txtcontainer = document.getElementById('previewTxt');
             document.getElementById('optimizeChoice').style.display = 'none';
@@ -175,18 +166,15 @@
         socket.on('replaceGif', async function (msg) {
             //assign timestamp to src to refresh img (does not refresh img if src is the same url) 
             document.getElementById('dest').src = (msg.output + '?random=' + new Date().getTime());
-            document.getElementById("applyButton").innerHTML = "Gif Optimized!"
         });
 
         socket.on('DisplayTxt', async function (msg){
             document.getElementById('previewTxt').style.display = "block";
             document.getElementById('previewTxt').innerHTML = msg.txt;
-            document.getElementById('loader').style.display = 'inline';
         })
 
         socket.on('DisplayGif', function (msg) {
             document.getElementById('previewTxt').style.display = "none";
-            document.getElementById('loader').style.display = "none";
             document.getElementById('choiceContainer').style.display = "flex";
             document.getElementById('log').style.display = "none";
 
@@ -201,6 +189,10 @@
                 gif.src = val['source'];
                 gif.setAttribute('gifId', val['id']);
                 gif.setAttribute('deckId', val['deckId']);
+<<<<<<< HEAD
+=======
+                // gif.setAttribute('transparency', val['opacity']);
+>>>>>>> adds optimized updateCopyDeck
                 li.appendChild(gif);
 
                 // Options
@@ -231,21 +223,14 @@
             item.innerHTML = "Optimized #"+(current_count+1)+" of "+ total_count;
             messages.insertBefore(item, messages.firstChild);
             window.sessionStorage.setItem('optimizationCount', current_count + 1);
-            if (current_count+1 == total_count){
-                document.getElementById('finishBtn').click();
-            }
         });
 
         socket.on('finishProcess', function (msg) {
             const toHref = (url, label) => '<a target="_blank" href="'+url+'">' + (label || url) + '</a>';
-            let deckurl = toHref(msg.link)
-
-            document.getElementById('previewTxt').innerHTML = "Process complete! You are now the owner of the optimized deck & will recieve an email confirmation.<br> You can find a copy of the deck in your personal drive or by following this link: <br><br>" + deckurl;
-            
+            document.getElementById('previewTxt').innerHTML = "Process completed! You can find an optimized copy of the deck here: <br>" + toHref(msg.link);
             document.getElementById('previewTxt').style.display = 'block';
             document.getElementById('cancelBtn').style.display = "none";
             document.getElementById('restart').style.display = "inline-block";
-            document.getElementById('loader').style.display = "none";
         })
 
         socket.on('update message', function (msg) {
