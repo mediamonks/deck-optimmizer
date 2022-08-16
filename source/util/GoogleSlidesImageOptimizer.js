@@ -1,6 +1,6 @@
 const {google} = require("googleapis");
 const fs = require("fs-extra");
-const AWS = require("aws-sdk");
+const AWS = require("../node/node_modules/aws-sdk");
 const path = require("path");
 const {OAuth2Client} = require('google-auth-library');
 const getCredentials = require("./getCredentials");
@@ -85,8 +85,7 @@ class GoogleSlidesOptimizer {
         return await new Promise((resolve) => {
             let data = {file_id: presentationId, requester_email: email};
             let res = request.post({
-                url: 'https://apim.workato.com/mediamonks_prod/labs-deck-optimmizer-v1/copy-presentation',
-
+                url: 'https://apim.workato.com/mediamonks_api/labs-deck-optimmizer-v1/copy-presentation',
                 headers: {
                     'Authorization': 'Bearer ' + workato_token,
                     'Content-Type': 'application/x-www-form-urlencoded'
@@ -104,17 +103,16 @@ class GoogleSlidesOptimizer {
     }
 
 
-    async changeOwnership(presentationId, email, name, gif_count, reduction){
+    async changeOwnership(presentationId, email, name){
         const creds = await getCredentials('./creds.json');
         let workato_token = creds['workato']['access_key'];
         return await new Promise((resolve) => {
             let res = request.post({
-                url: 'https://apim.workato.com/mediamonks_prod/labs-deck-optimmizer-v1/transfer-file-ownership',
+                url: 'https://apim.workato.com/mediamonks_api/labs-deck-optimmizer-v1/transfer-file-ownership',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
                     'Authorization': 'Bearer ' + workato_token,
                 },
-                body:  JSON.stringify({file_id: presentationId, email:email, notification_text: "string", move_to_root: true, file_name: name, analytics_gif_count:gif_count, analytics_filesize_reduction: reduction})
                 body:  JSON.stringify({file_id: presentationId, email:email, notification_text: "string", move_to_root: true, file_name: name})
             }, function(error, response, body){
                 resolve(response.statusCode); 

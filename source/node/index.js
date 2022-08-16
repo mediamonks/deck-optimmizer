@@ -33,6 +33,7 @@ console.log = function (d, socket) {
     });
 })();
 
+
 app.use(express.static(__dirname + '/src/'));
 
 app.get('/', (req, res) => {
@@ -41,6 +42,7 @@ app.get('/', (req, res) => {
 
 app.use('/gif', express.static('/src/gif/'));
 app.use('/src/gif/', express.static('/src/gif/'));
+
 
 io.on('connection', async (socket) => {
     socket.on('processDeck', async msg => {
@@ -63,6 +65,7 @@ io.on('connection', async (socket) => {
         await optimizeGif(sourceImagePath, outputImagePath, msg.factor, msg.colourRange);
 
         await fs.copyFile(outputImagePath, './src/gif/' + msg.gifId + '_optimized.gif');
+
 
         if (msg.auto == false) {
             if (socket) socket.emit('replaceGif', {'output': './gif/' + msg.gifId + '_optimized.gif'});
@@ -247,9 +250,8 @@ io.on('connection', async (socket) => {
                 await fs.unlinkSync(sourceImagePath);
                 await fs.unlinkSync(outputImagePath);
                 await fs.unlinkSync('src/gif/' + element.objectId + '_optimized.gif');
-            } catch (e) {
-            }
-            ;
+
+            } catch (e) {};
 
             console.log('#' + (index + 1) + ' of ' + gifElements.length + ', Input: ' + formatSizeUnits(sourceSize) + ', Output: ' + formatSizeUnits(outputImageStats.size) + ', Optimization: ' + Math.round(optimizationPercentage) + "%", socket);
             //progressBar.increment(1);
