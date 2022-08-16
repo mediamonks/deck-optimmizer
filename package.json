@@ -1,0 +1,24 @@
+{
+  "name": "deck-optimmizer",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "aws-sdk": "^2.1117.0",
+    "axios": "^0.26.1",
+    "file-type-cjs": "^1.0.5",
+    "fs-extra": "^10.1.0",
+    "gifsicle": "^5.3.0",
+    "google-auth-library": "^7.14.1",
+    "googleapis": "^100.0.0",
+    "inquirer": "^8.2.2",
+    "open": "^8.4.0",
+    "server-destroy": "^1.0.1"
+  }
+}
