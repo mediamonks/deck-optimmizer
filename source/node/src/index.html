@@ -150,7 +150,8 @@
     <script>
         var input = document.getElementById('input');
         var count;
-        var socket = io();
+        var socket = io.connect();
+
 
         form.addEventListener('submit', function (e) {
             e.preventDefault();
