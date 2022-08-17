@@ -2,7 +2,10 @@
 const app = require('express')();
 express = require('express');
 const http = require('http').Server(app);
-const io = require('socket.io')(http);
+const io = require('socket.io')(http, {
+    pingInterval: 10000,
+    pingTimeout: 30000
+});
 const util = require("util");
 const fs = require("fs-extra");
 const sizeOf = util.promisify(require('image-size'))
@@ -45,6 +48,7 @@ app.use('/src/gif/', express.static('/src/gif/'));
 
 
 io.on('connection', async (socket) => {
+    console.log('Socket connection established. Socket id: '+ socket.id)
     socket.on('processDeck', async msg => {
         try {
             const presentation = await processDeck(msg, socket);

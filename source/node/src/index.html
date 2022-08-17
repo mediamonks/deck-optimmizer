@@ -152,6 +152,10 @@
         var count;
         var socket = io();
 
+        socket.on("connect", () => {
+            console.log('Socket connection established. Socket id: '+ socket.id)
+        });
+
         form.addEventListener('submit', function (e) {
             e.preventDefault();
             if (input.value) {
@@ -214,7 +218,7 @@
                 li = document.createElement('li');
                 var outputGif = document.createElement('img');
                 ul.appendChild(li);
-                outputGif.src = val['output'];
+                //outputGif.src = val['output'];
                 outputGif.setAttribute('gifId', val['id']);
                 outputGif.setAttribute('deckId', val['deckId']);
                 li.appendChild(outputGif);
