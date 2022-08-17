@@ -371,7 +371,8 @@ ul li {
     background: #ff1a1a;
 }
 
-#applyButton{
+#applyButton,
+#finishBtn{
     background: #00c700;
 }
 
@@ -460,10 +461,6 @@ li>img{
 
 textarea {
     resize: none;
-}
-
-#finishBtn{
-    background: #ff0000;
 }
 
 #optionsContainer{
