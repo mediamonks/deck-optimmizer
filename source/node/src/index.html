@@ -152,6 +152,10 @@
         var count;
         var socket = io();
 
+        socket.on("connect", () => {
+            console.log('Socket connection established. Socket id: '+ socket.id)
+        });
+
         form.addEventListener('submit', function (e) {
             e.preventDefault();
             if (input.value) {

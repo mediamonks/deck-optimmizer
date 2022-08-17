@@ -48,6 +48,7 @@ app.use('/src/gif/', express.static('/src/gif/'));
 
 
 io.on('connection', async (socket) => {
+    console.log('Socket connection established. Socket id: '+ socket.id)
     socket.on('processDeck', async msg => {
         try {
             const presentation = await processDeck(msg, socket);
