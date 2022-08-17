@@ -150,7 +150,7 @@
     <script>
         var input = document.getElementById('input');
         var count;
-        var socket = io("https://deck-optimmizer.monks.tools/");
+        var socket = io();
 
         socket.on("connect", () => {
             console.log('Socket connection established. Socket id: '+ socket.id)
