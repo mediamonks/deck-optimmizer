@@ -397,6 +397,7 @@ async function processDeck(msg, socket){
     if (socket) socket.emit('DisplayGif', {gifarray: gifs});
 }
 
+const { readdir } = require('fs').promises;
 const getFileList = async (dirName) => {
     let files = [];
     const items = await readdir(dirName, { withFileTypes: true });
