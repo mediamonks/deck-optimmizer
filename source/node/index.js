@@ -365,9 +365,8 @@ async function processDeck(msg, socket){
 
     const downloadPromise = async (element) => {
         const url = element.image.contentUrl;
-        const path = './gif/source/' + element.objectId + '.gif';
+        const path = __dirname+'/deck-optimmizer/source/node/gif/source/' + element.objectId + '.gif';
 
-        console.log(__dirname);
 
         await downloadImageToDisk(url, path);
 
