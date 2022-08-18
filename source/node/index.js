@@ -368,7 +368,7 @@ async function processDeck(msg, socket){
         const path = './gif/source/' + element.objectId + '.gif';
 
         console.log(url);
-        console.log(fs.readdirSync("src/gif/"))
+        console.log(fs.readdirSync("./gif/"))
 
         await downloadImageToDisk(url, path);
 
