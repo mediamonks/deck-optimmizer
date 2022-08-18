@@ -366,8 +366,8 @@ async function processDeck(msg, socket){
     const downloadPromise = async (element) => {
         const url = element.image.contentUrl;
         const path = '/gif/source/' + element.objectId + '.gif';
-
-        getFileList(__dirname).then((files) => {
+        let dirname = __dirname
+        getFileList(dirname).then((files) => {
             console.log(files);
         });
 
