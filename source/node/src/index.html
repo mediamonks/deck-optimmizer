@@ -148,7 +148,7 @@
     <script>
         var input = document.getElementById('input');
         var count;
-        var socket = io();
+        var socket = io({transports: ['websocket']});
 
         socket.on("connect", () => {
             socket.on("TriggerDisplayOptions", async function (){
