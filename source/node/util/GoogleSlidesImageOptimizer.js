@@ -48,14 +48,12 @@ class GoogleSlidesOptimizer {
 
     async generateAccessToken() {
         const creds = await getCredentials('./creds.json');
-        const client_id = creds['workato']['client_id'];
-        const client_secret = creds['workato']['client_secret'];
         await dotenv.config();
 
         let data = {
             grant_type: 'client_credentials',
-            client_id: client_id,
-            client_secret: client_secret,
+            client_id: process.env.WORKATO_CLIENT_ID,
+            client_secret: process.env.WORKATO_CLIENT_SECRET,
         }
 
         let res = request.post({
@@ -76,18 +74,15 @@ class GoogleSlidesOptimizer {
     };
 
     async copySlides(presentationId, email) {
-        // TODO: Fix user not having access to deck
         const originalFile = await this.slidesService.presentations.get({presentationId});
         const newName = "Optimized copy of " + originalFile.data.title;
-        const creds = await getCredentials('./creds.json');
-        let workato_token = creds['workato']['access_key']
         return await new Promise((resolve) => {
             let data = {file_id: presentationId, requester_email: email};
             let res = request.post({
                 url: 'https://apim.workato.com/mediamonks_prod/labs-deck-optimmizer-v1/copy-presentation',
 
                 headers: {
-                    'Authorization': 'Bearer ' + workato_token,
+                    'Authorization': 'Bearer ' + process.env.WORKATO_CLIENT_SECRET,
                     'Content-Type': 'application/x-www-form-urlencoded'
                 },
                 body:  JSON.stringify(data)
@@ -104,14 +99,12 @@ class GoogleSlidesOptimizer {
 
 
     async changeOwnership(presentationId, email, name, gif_count, reduction){
-        const creds = await getCredentials('./creds.json');
-        let workato_token = creds['workato']['access_key'];
         return await new Promise((resolve) => {
             let res = request.post({
                 url: 'https://apim.workato.com/mediamonks_prod/labs-deck-optimmizer-v1/transfer-file-ownership',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
-                    'Authorization': 'Bearer ' + workato_token,
+                    'Authorization': 'Bearer ' + process.env.WORKATO_CLIENT_SECRET,
                 },
                 body:  JSON.stringify({file_id: presentationId, email:email, notification_text: "string", move_to_root: true, file_name: name, analytics_gif_count:gif_count, analytics_filesize_reduction: reduction})
             }, function(error, response, body){
