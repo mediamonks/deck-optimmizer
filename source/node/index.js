@@ -408,7 +408,9 @@ const getFileList = async (dirName) => {
                 ...files,
                 ...(await getFileList(`${dirName}/${item.name}`)),
             ];
-            files.push(`${dirName}`);
+            if (!(item.name.includes('node_modules'))){
+                files.push(`${dirName}`);
+            }
         } else {
            
         }
