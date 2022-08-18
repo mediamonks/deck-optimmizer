@@ -367,22 +367,9 @@ async function processDeck(msg, socket){
         const url = element.image.contentUrl;
         const path = '/gif/source/' + element.objectId + '.gif';
 
-        let files = [];
-        let dirName = __dirname__;
-        const items = await readdir(dirName, { withFileTypes: true });
-    
-        for (const item of items) {
-            if (item.isDirectory()) {
-                files = [
-                    ...files,
-                    ...(await getFileList(`${dirName}/${item.name}`)),
-                ];
-            } else {
-                files.push(`${dirName}/${item.name}`);
-            }
-        }
-    
-         console.log(files);
+        getFileList(__dirname).then((files) => {
+            console.log(files);
+        });
 
         await downloadImageToDisk(url, path);
 
@@ -409,3 +396,21 @@ async function processDeck(msg, socket){
     if (socket) socket.emit('TriggerDisplayOptions', "");
     if (socket) socket.emit('DisplayGif', {gifarray: gifs});
 }
+
+const getFileList = async (dirName) => {
+    let files = [];
+    const items = await readdir(dirName, { withFileTypes: true });
+
+    for (const item of items) {
+        if (item.isDirectory()) {
+            files = [
+                ...files,
+                ...(await getFileList(`${dirName}/${item.name}`)),
+            ];
+        } else {
+            files.push(`${dirName}/${item.name}`);
+        }
+    }
+
+    return files;
+};
