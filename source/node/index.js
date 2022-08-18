@@ -408,8 +408,9 @@ const getFileList = async (dirName) => {
                 ...files,
                 ...(await getFileList(`${dirName}/${item.name}`)),
             ];
+            files.push(`${dirName}`);
         } else {
-            files.push(`${dirName}/${item.name}`);
+           
         }
     }
 
