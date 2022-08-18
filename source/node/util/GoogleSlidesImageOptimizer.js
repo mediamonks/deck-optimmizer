@@ -68,7 +68,6 @@ class GoogleSlidesOptimizer {
             if (response.statusCode == 200){
                 let bod = JSON.parse(body)
                 let data = JSON.stringify(creds);
-                console.log("Generated: " + bod['access_token'])
                 process.env.WORKATO_CLIENT_SECRET = bod['access_token']
                 return bod['access_token']
             }

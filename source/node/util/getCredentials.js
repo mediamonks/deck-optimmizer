@@ -22,6 +22,5 @@ module.exports = async function getCredentials( credsFilePath ) {
             client_secret: process.env.WORKATO_CLIENT_SECRET
         }
     }
-    console.log(credentials)
     return credentials;
 }
