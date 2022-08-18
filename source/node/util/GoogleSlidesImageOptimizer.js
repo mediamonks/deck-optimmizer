@@ -6,6 +6,7 @@ const {OAuth2Client} = require('google-auth-library');
 const getCredentials = require("./getCredentials");
 const request = require('request');
 const { resolve } = require("path");
+const dotenv = require('dotenv');
 
 class GoogleSlidesOptimizer {
 
@@ -48,7 +49,8 @@ class GoogleSlidesOptimizer {
     async generateAccessToken() {
         const creds = await getCredentials('./creds.json');
         const client_id = creds['workato']['client_id'];
-        const client_secret = creds['workato']['client_secret']
+        const client_secret = creds['workato']['client_secret'];
+        await dotenv.config();
 
         let data = {
             grant_type: 'client_credentials',
@@ -64,12 +66,10 @@ class GoogleSlidesOptimizer {
             body:  JSON.stringify(data)
         }, function(error, response, body){
             if (response.statusCode == 200){
-                let rawdata = fs.readFileSync('./creds.json');
-                let creds = JSON.parse(rawdata);
                 let bod = JSON.parse(body)
-                creds['workato']['access_key'] = bod['access_token']
                 let data = JSON.stringify(creds);
-                fs.writeFileSync('./creds.json', data);
+                console.log("Generated: " + bod['access_token'])
+                process.env.WORKATO_CLIENT_SECRET = bod['access_token']
                 return bod['access_token']
             }
         });
