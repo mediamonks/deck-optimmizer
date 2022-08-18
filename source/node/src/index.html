@@ -151,19 +151,7 @@
         var socket = io();
 
         socket.on("connect", () => {
-            console.log('Socket connection established. Socket id: '+ socket.id)
-        });
-
-        form.addEventListener('submit', function (e) {
-            e.preventDefault();
-            if (input.value) {
-                document.querySelector('#form').remove();
-                socket.emit('processDeck', { 'url': input.value, 'token': window.sessionStorage.getItem('google-session') });
-                input.value = '';
-            }
-        });
-       
-        socket.on("TriggerDisplayOptions", async function (){
+            socket.on("TriggerDisplayOptions", async function (){
             document.querySelector('#helpTxt').innerHTML = 'Optimize all the GIFs in your deck before sharing.';
             document.getElementById("helpTxt").style.display = "block";
             document.getElementById("helpTxt").style.fontSize = "18px";
@@ -258,6 +246,18 @@
             messages.insertBefore(item, messages.firstChild);
             console.log(msg.data)
         });
+        });
+
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            if (input.value) {
+                document.querySelector('#form').remove();
+                socket.emit('processDeck', { 'url': input.value, 'token': window.sessionStorage.getItem('google-session') });
+                input.value = '';
+            }
+        });
+       
+        
     </script>
 </body>
 </html>
