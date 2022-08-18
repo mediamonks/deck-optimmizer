@@ -136,8 +136,6 @@ io.on('connection', async (socket) => {
         // add everything into array of functions to run with limited concurrency
         const pLimit = await import('p-limit'); // using this ESM package to limit concurrency of promises
         const limit = pLimit.default(50); // set limit to 100 promises at a time
-        // const progressBar = new cliProgress.SingleBar({}, cliProgress.Presets.shades_classic);
-        // progressBar.start(gifElements.length, 0); // start a new progress bar
 
         const doEveryThing = async (element, index) => {
 
