@@ -69,7 +69,7 @@ io.on('connection', async (socket) => {
         //optimize gif and remove source image after its done
         await optimizeGif(sourceImagePath, outputImagePath, msg.factor, msg.colourRange);
 
-        await fs.copyFile(outputImagePath, dirname+'/src/gif/' + msg.gifId + '_optimized.gif');
+        await fs.copyFile(outputImagePath, dirname+'/src/gif/'+msg.gifId+'_optimized.gif');
 
         if (msg.auto == false) {
             if (socket) socket.emit('replaceGif', {'output': dirname+'/src/gif/'+msg.gifId+'_optimized.gif'});
