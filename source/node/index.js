@@ -59,8 +59,8 @@ io.on('connection', async (socket) => {
 
     socket.on('applyOptimizeSettings', async msg => {
         let dirname = __dirname;
-        const sourceImagePath = dirname+'/gif/source/'+element.objectId+'.gif';
-        const outputImagePath = dirname+'/gif/output/' + msg.gifId + '_optimized.gif';
+        const sourceImagePath = dirname+'/gif/source/'+msg.gifId+'.gif';
+        const outputImagePath = dirname+'/gif/output/'+msg.gifId+ '_optimized.gif';
         const sourceUrl = msg.src;
 
         // download image
