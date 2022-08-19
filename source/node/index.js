@@ -367,9 +367,10 @@ async function processDeck(msg, socket){
         const url = element.image.contentUrl;
         const path = '/gif/source/' + element.objectId + '.gif';
         let dirname = __dirname
-        getFileList(dirname).then((files) => {
-            console.log(files);
-        });
+        console.log(fs.readdirSync("var/www/gif"));
+        console.log(fs.readdirSync("var/www/src"));
+        
+
 
         await downloadImageToDisk(url, path);
 
@@ -396,25 +397,3 @@ async function processDeck(msg, socket){
     if (socket) socket.emit('TriggerDisplayOptions', "");
     if (socket) socket.emit('DisplayGif', {gifarray: gifs});
 }
-
-const { readdir } = require('fs').promises;
-const getFileList = async (dirName) => {
-    let files = [];
-    const items = await readdir(dirName, { withFileTypes: true });
-
-    for (const item of items) {
-        if (item.isDirectory()) {
-            files = [
-                ...files,
-                ...(await getFileList(`${dirName}/${item.name}`)),
-            ];
-            if (!(dirName.includes('node_modules'))){
-                files.push(`${dirName}`);
-            } else {
-            }
-        } else {
-        }
-    }
-
-    return files;
-};
