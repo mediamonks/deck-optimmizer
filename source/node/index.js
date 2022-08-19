@@ -58,7 +58,7 @@ io.on('connection', async (socket) => {
     });
 
     socket.on('applyOptimizeSettings', async msg => {
-        let dir_name = __dirname;
+        let dirname = __dirname;
         const sourceImagePath = dirname+'/gif/source/'+element.objectId+'.gif';
         const outputImagePath = dirname+'/gif/output/' + msg.gifId + '_optimized.gif';
         const sourceUrl = msg.src;
@@ -80,7 +80,7 @@ io.on('connection', async (socket) => {
 
     socket.on('deleteGifs', async msg => {
         let gifs = msg.gifIds;
-        let dir_name = __dirname;
+        let dirname = __dirname;
         for (let id in gifs) {
             try {
                 if (fs.existsSync(dirname+'/gif/source/' + gifs[id] + '.gif')) {
@@ -98,7 +98,7 @@ io.on('connection', async (socket) => {
     });
 
     socket.on('updateCopyDeck', async msg => {
-        let dir_name = __dirname;
+        let dirname = __dirname;
         // get credentials, create if they don't exist
         const credentials = await getCredentials('./creds.json');
 
@@ -367,7 +367,7 @@ async function processDeck(msg, socket){
 
     const downloadPromise = async (element) => {
         const url = element.image.contentUrl;
-        let dir_name = __dirname;
+        let dirname = __dirname;
         const path = dirname+'/gif/source/'+element.objectId+'.gif';
         
         await downloadImageToDisk(url, path);
