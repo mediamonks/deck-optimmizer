@@ -244,15 +244,13 @@ io.on('connection', async (socket) => {
             let uploadedGifUrl = await slidesOptimizer.uploadFileToS3(outputImagePath);
 
             //replace url in google slides
-            if (outputImageStats.size < 50000000){
+            if ((outputImageStats.size < 50000000) && (Math.round(optimizationPercentage) > 0)){
                 try {
                     await slidesOptimizer.replaceImageUrl(presentationId, sourceImageId, uploadedGifUrl);
                 } catch (error) {
                     console.error(error);
                 }
-            } else {
-                console.log('Too large');
-            }
+            } else {}
             
             try {
                 await fs.unlinkSync(sourceImagePath);
@@ -260,9 +258,9 @@ io.on('connection', async (socket) => {
                 await fs.unlinkSync(dirname+'/src/gif/'+ element.objectId + '_optimized.gif');
 
             } catch (e) {};
-
-            console.log('#' + (index + 1) + ' of ' + gifElements.length + ', Input: ' + formatSizeUnits(sourceSize) + ', Output: ' + formatSizeUnits(outputImageStats.size) + ', Optimization: ' + Math.round(optimizationPercentage) + "%", socket);
-            //progressBar.increment(1);
+            if (Math.round(optimizationPercentage) > 0){
+                console.log('#' + (index + 1) + ' of ' + gifElements.length + ', Input: ' + formatSizeUnits(sourceSize) + ', Output: ' + formatSizeUnits(outputImageStats.size) + ', Optimization: ' + Math.round(optimizationPercentage) + "%", socket);
+            }
         }
 
         const listOfPromises = gifElements.map((gifElement, index) => {

@@ -338,7 +338,7 @@ ul li {
     padding: 0;
     padding-top: 10px;
     display: none;
-    max-height: 200px;
+    max-height: 320px;
     overflow-x: auto;
     z-index: 9;
 }
