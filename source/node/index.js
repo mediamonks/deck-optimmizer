@@ -58,8 +58,9 @@ io.on('connection', async (socket) => {
     });
 
     socket.on('applyOptimizeSettings', async msg => {
-        const sourceImagePath = './gif/source/' + msg.gifId + '.gif';
-        const outputImagePath = './gif/output/' + msg.gifId + '_optimized.gif';
+        let dir_name = __dirname;
+        const sourceImagePath = dirname+'/gif/source/'+element.objectId+'.gif';
+        const outputImagePath = dirname+'/gif/output/' + msg.gifId + '_optimized.gif';
         const sourceUrl = msg.src;
 
         // download image
@@ -68,11 +69,10 @@ io.on('connection', async (socket) => {
         //optimize gif and remove source image after its done
         await optimizeGif(sourceImagePath, outputImagePath, msg.factor, msg.colourRange);
 
-        await fs.copyFile(outputImagePath, './src/gif/' + msg.gifId + '_optimized.gif');
-
+        await fs.copyFile(outputImagePath, dirname+'/src/gif/' + msg.gifId + '_optimized.gif');
 
         if (msg.auto == false) {
-            if (socket) socket.emit('replaceGif', {'output': './gif/' + msg.gifId + '_optimized.gif'});
+            if (socket) socket.emit('replaceGif', {'output': dirname+'/src/gif/'+msg.gifId+'_optimized.gif'});
         } else {
             socket.emit('optimizationCompleted', 'completed');
         }
@@ -80,16 +80,17 @@ io.on('connection', async (socket) => {
 
     socket.on('deleteGifs', async msg => {
         let gifs = msg.gifIds;
+        let dir_name = __dirname;
         for (let id in gifs) {
             try {
-                if (fs.existsSync('./gif/source/' + gifs[id] + '.gif')) {
-                    await fs.unlinkSync('./gif/source/' + gifs[id] + '.gif');
+                if (fs.existsSync(dirname+'/gif/source/' + gifs[id] + '.gif')) {
+                    await fs.unlinkSync(dirname+'/gif/source/' + gifs[id] + '.gif');
                 }
-                if (fs.existsSync('./gif/output/' + gifs[id] + '_optimized.gif')) {
-                    await fs.unlinkSync('./gif/output/' + gifs[id] + '_optimized.gif');
+                if (fs.existsSync(dirname+'/gif/output/' + gifs[id] + '_optimized.gif')) {
+                    await fs.unlinkSync(dirname+'/gif/output/' + gifs[id] + '_optimized.gif');
                 }
-                if (fs.existsSync('public/gif/' + gifs[id] + '_optimized.gif')) {
-                    await fs.unlinkSync('public/gif/' + gifs[id] + '_optimized.gif');
+                if (fs.existsSync(dirname+'/src/gif/' + gifs[id] + '_optimized.gif')) {
+                    await fs.unlinkSync(dirname+'/src/gif/' + gifs[id] + '_optimized.gif');
                 }
             } catch (e) {
             }
@@ -97,6 +98,7 @@ io.on('connection', async (socket) => {
     });
 
     socket.on('updateCopyDeck', async msg => {
+        let dir_name = __dirname;
         // get credentials, create if they don't exist
         const credentials = await getCredentials('./creds.json');
 
@@ -129,7 +131,7 @@ io.on('connection', async (socket) => {
 
         await Promise.all(checkIfGifPromiseArray);
 
-        let optimizedGifs = fs.readdirSync("src/gif/");
+        let optimizedGifs = fs.readdirSync(dirname+'/src/gif/');
 
         let totalSourceSize = 0, outputSize = 0;
 
@@ -146,12 +148,12 @@ io.on('connection', async (socket) => {
             let match = optimizedGifs.some(e => e.includes(sourceImageId));
 
             if (match) {
-                sourceImagePath = './gif/source/' + element.objectId + '.gif';
-                outputImagePath = './gif/output/' + element.objectId + '_optimized.gif';
+                sourceImagePath = dirname+'/gif/source/' + element.objectId + '.gif';
+                outputImagePath = dirname+'/gif/output/' + element.objectId + '_optimized.gif';
                 sourceSize = fs.statSync(sourceImagePath).size;
             } else {
-                sourceImagePath = './gif/source/' + element.objectId + '.gif';
-                outputImagePath = './gif/output/' + element.objectId + '.gif';
+                sourceImagePath = dirname+'/gif/source/' + element.objectId + '.gif';
+                outputImagePath = dirname+'/gif/output/' + element.objectId + '.gif';
                 sourceSize = fs.statSync(sourceImagePath).size;
                 // download image
                 await fs.copyFile(sourceImagePath, outputImagePath);
@@ -251,7 +253,7 @@ io.on('connection', async (socket) => {
             try {
                 await fs.unlinkSync(sourceImagePath);
                 await fs.unlinkSync(outputImagePath);
-                await fs.unlinkSync('src/gif/' + element.objectId + '_optimized.gif');
+                await fs.unlinkSync(dirname+'/src/gif/'+ element.objectId + '_optimized.gif');
 
             } catch (e) {};
 
@@ -365,7 +367,9 @@ async function processDeck(msg, socket){
 
     const downloadPromise = async (element) => {
         const url = element.image.contentUrl;
-        const path = './gif/source/' + element.objectId + '.gif';
+        let dir_name = __dirname;
+        const path = dirname+'/gif/source/'+element.objectId+'.gif';
+        
         await downloadImageToDisk(url, path);
 
         gifs[element.objectId] = {
