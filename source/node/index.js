@@ -244,12 +244,16 @@ io.on('connection', async (socket) => {
             let uploadedGifUrl = await slidesOptimizer.uploadFileToS3(outputImagePath);
 
             //replace url in google slides
-            try {
-                await slidesOptimizer.replaceImageUrl(presentationId, sourceImageId, uploadedGifUrl);
-            } catch (error) {
-                console.error(error);
+            if (outputImageStats.size < 50000000){
+                try {
+                    await slidesOptimizer.replaceImageUrl(presentationId, sourceImageId, uploadedGifUrl);
+                } catch (error) {
+                    console.error(error);
+                }
+            } else {
+                console.log('Too large');
             }
-
+            
             try {
                 await fs.unlinkSync(sourceImagePath);
                 await fs.unlinkSync(outputImagePath);
