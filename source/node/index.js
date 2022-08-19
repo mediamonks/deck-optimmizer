@@ -72,7 +72,7 @@ io.on('connection', async (socket) => {
         await fs.copyFile(outputImagePath, dirname+'/src/gif/'+msg.gifId+'_optimized.gif');
 
         if (msg.auto == false) {
-            if (socket) socket.emit('replaceGif', {'output': dirname+'/src/gif/'+msg.gifId+'_optimized.gif'});
+            if (socket) socket.emit('replaceGif', {'output': './gif/'+msg.gifId+'_optimized.gif'});
         } else {
             socket.emit('optimizationCompleted', 'completed');
         }
