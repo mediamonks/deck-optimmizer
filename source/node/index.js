@@ -43,8 +43,8 @@ app.get('/', (req, res) => {
     res.sendFile(__dirname + '/src/index.html');
 });
 
-app.use('/gif', express.static('/src/gif/'));
-app.use('/src/gif/', express.static('/src/gif/'));
+app.use('/gif', express.static(__dirname + '/src/gif/'));
+app.use('/src/gif/', express.static(__dirname + '/src/gif/'));
 
 
 io.on('connection', async (socket) => {
