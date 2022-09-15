@@ -19,3 +19,5 @@ img.gif
 src/parseGifsicleStdout.js
 
 src/gifInfo.js
+
+.env
