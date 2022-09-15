@@ -35,6 +35,11 @@ body {
 
 }
 
+.logo-img {
+    margin-top: 20px;
+    width: 510px;
+}
+
 .title sup {
     font-size: 15px;
     font-weight: 400;
