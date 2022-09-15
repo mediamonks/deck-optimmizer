@@ -7,6 +7,7 @@ const getCredentials = require("./getCredentials");
 const request = require('request');
 const { resolve } = require("path");
 const dotenv = require('dotenv');
+const axios = require("axios");
 
 class GoogleSlidesOptimizer {
 
@@ -47,8 +48,12 @@ class GoogleSlidesOptimizer {
     }
 
     async generateAccessToken() {
-        const creds = await getCredentials('./creds.json');
         await dotenv.config();
+
+        const url = 'https://apim.workato.com/oauth2/token';
+        const headers = {
+            'Content-Type': 'application/x-www-form-urlencoded'
+        };
 
         let data = {
             grant_type: 'client_credentials',
@@ -56,31 +61,22 @@ class GoogleSlidesOptimizer {
             client_secret: process.env.WORKATO_CLIENT_SECRET,
         }
 
-        let res = request.post({
-            url: 'https://apim.workato.com/oauth2/token',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
-            },
-            body:  JSON.stringify(data)
-        }, function(error, response, body){
-            if (response.statusCode == 200){
-                let bod = JSON.parse(body)
-                let data = JSON.stringify(creds);
-                process.env.WORKATO_CLIENT_SECRET = bod['access_token']
-                return bod['access_token']
-            }
-        });
+        const result = await axios.post(url, data, { headers })
 
+        return result.data.access_token;
     };
 
     async copySlides(presentationId, email) {
+        const token = await this.generateAccessToken();
+
         return await new Promise((resolve) => {
             let data = {file_id: presentationId, requester_email: email};
+
             let res = request.post({
                 url: 'https://apim.workato.com/mediamonks_prod/labs-deck-optimmizer-v1/copy-presentation',
 
                 headers: {
-                    'Authorization': 'Bearer ' + process.env.WORKATO_CLIENT_SECRET,
+                    'Authorization': 'Bearer ' + token,
                     'Content-Type': 'application/x-www-form-urlencoded'
                 },
                 body:  JSON.stringify(data)
@@ -90,23 +86,24 @@ class GoogleSlidesOptimizer {
                 } else {
                     let bod = JSON.parse(body)
                     resolve(bod['copy_file_id'])
-                }        
+                }
             });
         });
     }
 
 
     async changeOwnership(presentationId, email, name, gif_count, reduction){
+        const token = await this.generateAccessToken();
         return await new Promise((resolve) => {
             let res = request.post({
                 url: 'https://apim.workato.com/mediamonks_prod/labs-deck-optimmizer-v1/transfer-file-ownership',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
-                    'Authorization': 'Bearer ' + process.env.WORKATO_CLIENT_SECRET,
+                    'Authorization': 'Bearer ' + token,
                 },
                 body:  JSON.stringify({file_id: presentationId, email:email, notification_text: "string", move_to_root: true, file_name: name, analytics_gif_count:gif_count, analytics_filesize_reduction: reduction})
             }, function(error, response, body){
-                resolve(response.statusCode); 
+                resolve(response.statusCode);
             });
         });
     }
