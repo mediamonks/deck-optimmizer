@@ -74,8 +74,6 @@ class GoogleSlidesOptimizer {
     };
 
     async copySlides(presentationId, email) {
-        const originalFile = await this.slidesService.presentations.get({presentationId});
-        const newName = "Optimized copy of " + originalFile.data.title;
         return await new Promise((resolve) => {
             let data = {file_id: presentationId, requester_email: email};
             let res = request.post({
