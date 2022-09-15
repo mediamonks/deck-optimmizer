@@ -1,6 +1,6 @@
 // app.js
 const app = require('express')();
-express = require('express');
+const express = require('express');
 const http = require('http').Server(app);
 const io = require('socket.io')(http, {
     pingInterval: 10000,
