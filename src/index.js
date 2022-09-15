@@ -37,14 +37,14 @@ console.log = function (d, socket) {
 })();
 
 
-app.use(express.static(__dirname + '/src/'));
+app.use(express.static(__dirname + '/html/'));
 
 app.get('/', (req, res) => {
-    res.sendFile(__dirname + '/src/index.html');
+    res.sendFile(__dirname + '/html/index.html');
 });
 
-app.use('/gif', express.static(__dirname + '/src/gif/'));
-app.use('/src/gif/', express.static(__dirname + '/src/gif/'));
+app.use('/gif', express.static(__dirname + '/html/gif/'));
+app.use('/html/gif/', express.static(__dirname + '/html/gif/'));
 
 
 io.on('connection', async (socket) => {
@@ -69,7 +69,7 @@ io.on('connection', async (socket) => {
         //optimize gif and remove source image after its done
         await optimizeGif(sourceImagePath, outputImagePath, msg.factor, msg.colourRange);
 
-        await fs.copyFile(outputImagePath, dirname+'/src/gif/'+msg.gifId+'_optimized.gif');
+        await fs.copyFile(outputImagePath, dirname+'/html/gif/'+msg.gifId+'_optimized.gif');
 
         if (msg.auto == false) {
             if (socket) socket.emit('replaceGif', {'output': './gif/'+msg.gifId+'_optimized.gif'});
@@ -89,8 +89,8 @@ io.on('connection', async (socket) => {
                 if (fs.existsSync(dirname+'/gif/output/' + gifs[id] + '_optimized.gif')) {
                     await fs.unlinkSync(dirname+'/gif/output/' + gifs[id] + '_optimized.gif');
                 }
-                if (fs.existsSync(dirname+'/src/gif/' + gifs[id] + '_optimized.gif')) {
-                    await fs.unlinkSync(dirname+'/src/gif/' + gifs[id] + '_optimized.gif');
+                if (fs.existsSync(dirname+'/html/gif/' + gifs[id] + '_optimized.gif')) {
+                    await fs.unlinkSync(dirname+'/html/gif/' + gifs[id] + '_optimized.gif');
                 }
             } catch (e) {
             }
@@ -131,7 +131,7 @@ io.on('connection', async (socket) => {
 
         await Promise.all(checkIfGifPromiseArray);
 
-        let optimizedGifs = fs.readdirSync(dirname+'/src/gif/');
+        let optimizedGifs = fs.readdirSync(dirname+'/html/gif/');
 
         let totalSourceSize = 0, outputSize = 0;
 
