@@ -32,6 +32,7 @@
     "image-size": "^1.0.1",
     "inquirer": "^8.2.2",
     "jsonwebtoken": "^8.5.1",
+    "mime": "^3.0.0",
     "mongoose": "^6.5.0",
     "open": "^8.4.0",
     "p-limit": "^4.0.0",
