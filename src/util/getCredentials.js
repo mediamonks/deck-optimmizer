@@ -1,12 +1,9 @@
-const fs = require("fs-extra");
-const inquirer = require("inquirer");
 const dotenv = require('dotenv');
 
-module.exports = async function getCredentials( credsFilePath ) {
-    let credentials;
-    
+module.exports = async function getCredentials() {
     await dotenv.config();
-    credentials = {
+
+    return {
         'google': {
             client_email: process.env.CLIENT_EMAIL,
             private_key: "-----BEGIN PRIVATE KEY-----\n"+process.env.PRIVATE_KEY+"\n-----END PRIVATE KEY-----",
@@ -22,5 +19,4 @@ module.exports = async function getCredentials( credsFilePath ) {
             client_secret: process.env.WORKATO_CLIENT_SECRET
         }
     }
-    return credentials;
 }
