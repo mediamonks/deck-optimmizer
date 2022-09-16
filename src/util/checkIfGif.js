@@ -7,6 +7,6 @@ module.exports = async (url) => {
         responseType: 'stream'
     });
     const contentType = resp.headers['content-type'];
-    return mime.extension(contentType) === 'gif';
+    return mime.getExtension(contentType) === 'gif';
 }
 
