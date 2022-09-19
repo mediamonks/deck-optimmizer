@@ -17,6 +17,7 @@ const formatSizeUnits = require("./util/formatSizeUnits");
 const optimizeGif = require("./util/optimizeGif");
 const cropGif = require("./util/cropGif");
 const getOptimizationStats = require("./util/getOptimizationStats")
+const getCropAndResizeLines = require("./util/getCropAndResizeLines")
 
 const port = process.env.PORT || 3000;
 const log_stdout = process.stdout;
@@ -118,13 +119,13 @@ app.get('/', (req, res) => {
             console.log(`Applying automatic optimization to ${deckData.gifs.length} GIFs using ${factor} compression factor and limiting colors to ${colourRange}`, socket);
             let cumulativeSourceSize = 0, cumulativeOutputSize = 0, counter = 0;
 
+            // optimize all gifs with limited concurrency
             let optimizedGifsArray = await Promise.all(deckData.gifs.map((element) => {
                 return gifOptimizeLimit(async () => {
                     const sourceImagePath = `${__dirname}/gif/source/${deckData.id}/${element.objectId}.gif`;
                     const outputImagePath = `${__dirname}/gif/output/${deckData.id}/${element.objectId}_optimized.gif`;
 
-                    const cropLine = '';
-                    const resizeLine = '';
+                    const { cropLine, resizeLine } = await getCropAndResizeLines(sourceImagePath, element);
 
                     //optimize gif and remove source image after its done
                     await optimizeGif(sourceImagePath, outputImagePath, factor, colourRange, cropLine, resizeLine);
