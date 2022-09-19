@@ -2,9 +2,9 @@ const {google} = require("googleapis");
 const fs = require("fs-extra");
 const AWS = require("aws-sdk");
 const path = require("path");
-const {OAuth2Client} = require('google-auth-library');
+const {OAuth2Client} = require('google-auth-library'); // todo: remove dependency on this and use googleapis instead
 const getCredentials = require("./getCredentials");
-const request = require('request');
+const request = require('request'); // todo: remove dependency on this outdated package and use axios instead
 const { resolve } = require("path");
 const dotenv = require('dotenv');
 const axios = require("axios");
@@ -32,23 +32,9 @@ class GoogleSlidesOptimizer {
         this.authClient = new OAuth2Client(auth.google['client_id']);
     }
 
-    async getSlides(presentationId) {
-        try {
-            let res =  await this.slidesService.presentations.get({presentationId});
-            return res
-        } catch (e) {
-            return e['response']['status']
-        };
-    }
-
-    getSlideIdFromUrl(url) {
-        let [_, url2] = url.split('https://docs.google.com/presentation/d/');
-        let [id] = url2.split('/');
-        return id;
-    }
-
     async generateAccessToken() {
-        await dotenv.config();
+        // generates workato access token
+        await dotenv.config(); // todo: why is it retrieving this again? already used in instantiating of class
 
         const url = 'https://apim.workato.com/oauth2/token';
         const headers = {
@@ -66,13 +52,38 @@ class GoogleSlidesOptimizer {
         return result.data.access_token;
     };
 
+    async verifyToken(token){
+        // verifies google token
+        const ticket = await this.authClient.verifyIdToken({
+            idToken: token,
+            audience: this.clientId,
+        });
+        return ticket
+    }
+
+    getSlideIdFromUrl(url) {
+        let [_, url2] = url.split('https://docs.google.com/presentation/d/');
+        let [id] = url2.split('/');
+        return id;
+    }
+
+    async getSlides(presentationId) {
+        try {
+            let res =  await this.slidesService.presentations.get({presentationId});
+            return res
+        } catch (e) {
+            return e['response']['status']
+        };
+    }
+
+
     async copySlides(presentationId, email) {
         const token = await this.generateAccessToken();
 
         return await new Promise((resolve) => {
             let data = {file_id: presentationId, requester_email: email};
 
-            let res = request.post({
+            request.post({ // todo: change to axios request
                 url: 'https://apim.workato.com/mediamonks_prod/labs-deck-optimmizer-v1/copy-presentation',
 
                 headers: {
@@ -95,7 +106,7 @@ class GoogleSlidesOptimizer {
     async changeOwnership(presentationId, email, name, gif_count, reduction){
         const token = await this.generateAccessToken();
         return await new Promise((resolve) => {
-            let res = request.post({
+            request.post({ // todo: change to axios request
                 url: 'https://apim.workato.com/mediamonks_prod/labs-deck-optimmizer-v1/transfer-file-ownership',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
@@ -108,19 +119,7 @@ class GoogleSlidesOptimizer {
         });
     }
 
-    async deleteSlides(id){
-        const del = await new Promise((resolve) => {
-            try{
-                this.driveService.files.delete({
-                    supportsTeamDrives: 'true',
-                    fileId: id
-                }, (err, driveResponse) => {
-                    if (err) console.log(err)
-                    resolve();
-                });
-            } catch (error) {console.log(error)}
-        });
-    }
+
 
     getImageElements (slides) {
         const elementsArray = [];
@@ -176,8 +175,55 @@ class GoogleSlidesOptimizer {
                 });
             } catch (e) {
                 console.log(e);
+                throw e;
             }
         })
+    }
+
+    async batchReplaceImageUrl(presentationId, replaceRequests) {
+        const imageReplaceMethod = 'CENTER_CROP'; // CENTER_INSIDE or CENTER_CROP
+
+        let requests = replaceRequests.map(replaceRequest => {
+            return {
+                replaceImage: {
+                    imageObjectId: replaceRequest.id,
+                    imageReplaceMethod: imageReplaceMethod,
+                    url: replaceRequest.url
+                }
+            }
+        })
+
+        return await new Promise(resolve => {
+            try {
+                this.slidesService.presentations.batchUpdate({
+                    presentationId,
+                    resource: {requests},
+                }, (err, response) => {
+                    if (err) {
+                        throw err;
+                    }
+                    resolve(response);
+                });
+            } catch (e) {
+                console.log(e);
+                throw e;
+            }
+        })
+    }
+
+
+    async deleteSlides(id){
+        const del = await new Promise((resolve) => {
+            try{
+                this.driveService.files.delete({
+                    supportsTeamDrives: 'true',
+                    fileId: id
+                }, (err, driveResponse) => {
+                    if (err) console.log(err)
+                    resolve();
+                });
+            } catch (error) {console.log(error)}
+        });
     }
 
     async updateImageProperties(presentationId, imageObjectId, imagePropertiesObj) {
@@ -235,14 +281,6 @@ class GoogleSlidesOptimizer {
         } catch (err) {
             console.log("File not Found ERROR : " + err.code);
         };
-    }
-
-    async verifyToken(token){
-        const ticket = await this.authClient.verifyIdToken({
-            idToken: token,
-            audience: this.clientId, 
-        });
-        return ticket
     }
 }
 

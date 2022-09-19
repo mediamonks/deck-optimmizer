@@ -1,19 +1,23 @@
-var input = document.getElementById('input');
-var count;
-var socket = io({transports: ['websocket']});
+// var input = document.getElementById('input');
+let count;
+let socket = io({transports: ['websocket']});
+let deckData;
 
+function onSignIn(googleUser) {
+    var profile = googleUser.getBasicProfile();
+    var id_token = googleUser.getAuthResponse().id_token;
+    window.sessionStorage.setItem('google-session', id_token);
+    document.getElementById("signOutButton").style.display = "block";
+    // document.getElementById("beginButton").style.display = "inline-flex";
+    displayMain()
+}
 
-
-document.getElementById("form").addEventListener('submit', function (e) {
-    e.preventDefault();
-    if (input.value) {
-        document.querySelector('#form').remove();
-        socket.emit('processDeck', { 'url': input.value, 'token': window.sessionStorage.getItem('google-session') });
-        input.value = '';
-    }
-});
-
-
+function signOut() {
+    var auth2 = gapi.auth2.getAuthInstance();
+    auth2.signOut().then(function () {
+        document.getElementById("signOutButton").style.display = "none";
+    });
+}
 
 function displayMain() {
     document.getElementById("helpTxt").style.display = "flex";
@@ -22,9 +26,35 @@ function displayMain() {
     document.getElementById('choiceContainer').style.display = "none";
 }
 
+document.getElementById("form").addEventListener('submit', function (e) {
+    e.preventDefault();
+    const urlInput = document.getElementById("input");
+
+    if (urlInput.value) {
+        const slideId = getSlideIdFromUrl(urlInput.value);
+
+        if (slideId) {
+            document.querySelector('#form').remove();
+            socket.emit('processDeck', { 'presentationId': slideId, 'token': window.sessionStorage.getItem('google-session') });
+            urlInput.value = '';
+        } else {
+            console.log('not a valid ID / url')
+        }
+    }
+});
+
+function getSlideIdFromUrl(inputString) {
+    try {
+        let [_, url2] = inputString.split('https://docs.google.com/presentation/d/');
+        let [id] = url2.split('/');
+        return id;
+    } catch (e) {
+        return false;
+    }
+}
+
 function toggleSelection(event) {
-    var click = event.target;
-    if (click.id == "autoLabel") {
+    if (event.target.id === "autoLabel") {
         document.getElementById("AutoOptimize").checked = true;
         document.getElementById("applyButton").innerHTML = "Optimize all";
         document.getElementById("finishBtn").style.display = "none";
@@ -77,29 +107,12 @@ async function optimizeGif(event) {
     if (auto) {
         triggerLog()
         document.getElementById('instructionText').innerHTML = "Please wait while we apply optimization. <br>";
-        var gifElements = document.querySelectorAll('[gifid]');
-        var optimizeArray = [];
-        let ids = [];
 
-        window.sessionStorage.setItem('optimizationCount', 0);
-
-        for (let index = 0; index < gifElements.length; ++index) {
-            const element = gifElements[index];
-            sourceGif = element.getAttribute('src')
-            gifid = element.getAttribute('gifid')
-
-            if (ids.includes(gifid)) { }
-            else {
-                optimizeArray.push(new Promise(async (resolve) => {
-                    socket.emit('applyOptimizeSettings', { 'auto': auto, 'factor': factor, 'colourRange': colourRange, 'gifId': gifid, 'src': sourceGif, 'count': index/2, 'total': gifElements.length/2 });
-                    resolve();
-                }))
-            }
-            ids.push(gifid)
-        }
-
-        window.sessionStorage.setItem('optimizationLength', optimizeArray.length);
-        await Promise.all(optimizeArray);
+        socket.emit('autoOptimizeAll', {
+            deckData,
+            factor,
+            colourRange
+        });
 
     } else {
         socket.emit('applyOptimizeSettings', { 'auto': auto, 'factor': factor, 'colourRange': colourRange, 'gifId': sourceGif.getAttribute('gifId'), 'src': sourceGif.src});
@@ -195,21 +208,7 @@ function copyText() {
     button.innerText = "Copied!";
 }
 
-function onSignIn(googleUser) {
-    var profile = googleUser.getBasicProfile();
-    var id_token = googleUser.getAuthResponse().id_token;
-    window.sessionStorage.setItem('google-session', id_token);
-    document.getElementById("signOutButton").style.display = "block";
-    document.getElementById("beginButton").style.display = "inline-flex";
-    displayMain()
-}
 
-function signOut() {
-    var auth2 = gapi.auth2.getAuthInstance();
-    auth2.signOut().then(function () {
-        document.getElementById("signOutButton").style.display = "none";
-    });
-}
 
 function updateDeck(event) {
     var gifData = {};
@@ -230,6 +229,8 @@ function updateDeck(event) {
     socket.emit('updateCopyDeck', { 'gifData': gifData, 'deckid': deckid, 'token': googletoken });
 };
 
+
+
 function cancelOptimization(event) {
     // Delete all stored gifs & copy of slides
     gifElements = document.querySelectorAll('[gifid]');
@@ -247,7 +248,6 @@ function cancelOptimization(event) {
     socket.emit('deleteGifs', { 'gifIds': gifIds, 'deckid': deckid });
     location.reload();
 };
-
 
 
 
@@ -285,17 +285,19 @@ socket.on("connect", () => {
         document.getElementById('choiceContainer').style.display = "flex";
         document.getElementById('log').style.display = "none";
 
-        for (const [key, val] of Object.entries(msg.gifarray)) {
-            var targetArea = document.getElementById('optimizePanel');
-            var ul = document.createElement('ul');
-            var li = document.createElement('li');
-            var gif = document.createElement('img');
+        deckData = msg;
+
+        msg.gifs.forEach(gifElement => {
+            const targetArea = document.getElementById('optimizePanel');
+            let ul = document.createElement('ul');
+            let li = document.createElement('li');
+            let gif = document.createElement('img');
 
             // Source gif
             ul.appendChild(li);
-            gif.src = val['source'];
-            gif.setAttribute('gifId', val['id']);
-            gif.setAttribute('deckId', val['deckId']);
+            gif.src = gifElement.source;
+            gif.setAttribute('gifId', gifElement.objectId);
+            gif.setAttribute('deckId', msg.id);
             li.appendChild(gif);
 
             // Options
@@ -303,19 +305,19 @@ socket.on("connect", () => {
 
             // Output gif
             li = document.createElement('li');
-            var outputGif = document.createElement('img');
+            let outputGif = document.createElement('img');
             ul.appendChild(li);
             //outputGif.src = val['output'];
-            outputGif.setAttribute('gifId', val['id']);
-            outputGif.setAttribute('deckId', val['deckId']);
+            outputGif.setAttribute('gifId', gifElement.objectId);
+            outputGif.setAttribute('deckId', msg.id);
             li.appendChild(outputGif);
 
             gif.addEventListener("click", displayOptions, false);
             targetArea.appendChild(ul);
-        };
+        });
 
-        var item = document.createElement('li');
-        item.innerHTML = "Preview loaded.";
+        const item = document.createElement('li');
+        // item.innerHTML = "Preview loaded.";
         messages.insertBefore(item, messages.firstChild);
     });
 
