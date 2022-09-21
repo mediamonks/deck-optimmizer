@@ -30,15 +30,13 @@ console.log = function (d, socket) {
     if (socket) socket.emit('update message', {data: d});
 };
 
-app.use(express.static(__dirname + '/html/'));
-// app.use('/gif', express.static(__dirname + '/html/gif/'));
-// app.use('/html/gif/', express.static(__dirname + '/html/gif/'));
+app.use(express.static(path.join(__dirname, "../frontend/")));
 
-app.use('/gif/source', express.static(__dirname + '/gif/source/'));
-app.use('/gif/output', express.static(__dirname + '/gif/output/'));
+app.use('/gif/source', express.static(path.join(__dirname, '/gif/source/')));
+app.use('/gif/output', express.static(path.join(__dirname, '/gif/output/')));
 
 app.get('/', (req, res) => {
-    res.sendFile(__dirname + '/html/index.html');
+    res.sendFile(path.join(__dirname, "../frontend/index.html"));
 });
 
 
