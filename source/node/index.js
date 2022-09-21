@@ -78,6 +78,11 @@ app.get('/', (req, res) => {
 
             // copy source slides to new slides
             let newSlidesId = await slidesOptimizer.copySlides(presentationId, payload['email'])
+
+            if (newSlidesId === 500) {
+                socket.emit('noAccess', {});
+                return;
+            }
             console.log('Copied source slides to new presentation with ID: ' + newSlidesId, socket)
 
             // get all slides data
@@ -123,9 +128,10 @@ app.get('/', (req, res) => {
             counter = 0;
             // apply initial crop/resize, which has to be done anyway
             await Promise.all(gifs.map(gif => {
-                return limit(async () => {
+                return gifOptimizeLimit(async () => {
                     const {cropLine, resizeLine} = await getCropAndResizeLines(gif.path, gif);
                     await optimizeGif(gif.path, gif.path, {cropLine, resizeLine});
+                    counter+=1;
                     socket.emit('DisplayTxt', {txt: `Cropped/Resized #${counter} of ${gifs.length} images...`});
                 });
             }))
@@ -257,24 +263,18 @@ app.get('/', (req, res) => {
         });
 
 
-        socket.on('deleteGifs', async msg => {
-            let gifs = msg.gifIds;
-            let dirname = __dirname;
-            for (let id in gifs) {
-                try {
-                    if (fs.existsSync(dirname + '/gif/source/' + gifs[id] + '.gif')) {
-                        await fs.unlinkSync(dirname + '/gif/source/' + gifs[id] + '.gif');
-                    }
-                    if (fs.existsSync(dirname + '/gif/output/' + gifs[id] + '_optimized.gif')) {
-                        await fs.unlinkSync(dirname + '/gif/output/' + gifs[id] + '_optimized.gif');
-                    }
-                    if (fs.existsSync(dirname + '/html/gif/' + gifs[id] + '_optimized.gif')) {
-                        await fs.unlinkSync(dirname + '/html/gif/' + gifs[id] + '_optimized.gif');
-                    }
-                } catch (e) {
-                }
-            }
+        socket.on('deleteGifs', async (props) => {
+            const {deckId} = props;
+
+            const sourceDir = `${__dirname}/gif/source/${deckId}/`;
+            const outputDir = `${__dirname}/gif/output/${deckId}/`;
+
+            // quick implementation of cleanup
+            console.log(`Cleaning up files...`, socket);
+            await removeFilesAndDirectory(sourceDir);
+            await removeFilesAndDirectory(outputDir);
         });
+
 
     });
 

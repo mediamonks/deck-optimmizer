@@ -241,27 +241,8 @@ function copyText() {
     button.innerText = "Copied!";
 }
 
-
-
-
-
-
-
 function cancelOptimization(event) {
-    // Delete all stored gifs & copy of slides
-    gifElements = document.querySelectorAll('[gifid]');
-    var gifIds = [];
-
-    try{
-        deckid = gifElements[0].getAttribute('deckid');
-        gifElements.forEach(element => {
-            gifIds.push(element.getAttribute('gifid'))
-        });
-    } catch (e) {
-        deckid = 0;
-    }
-
-    socket.emit('deleteGifs', { 'gifIds': gifIds, 'deckid': deckid });
+    socket.emit('deleteGifs', { deckId: deckData.id });
     location.reload();
 };
 
