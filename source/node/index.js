@@ -10,6 +10,7 @@ const path = require('path');
 const fs = require("fs");
 const sizeOf = util.promisify(require('image-size'))
 const cliProgress = require('cli-progress');
+const packageJson = require('./package.json');
 
 const GoogleSlidesOptimizer = require("./util/GoogleSlidesImageOptimizer");
 const getCredentials = require("./util/getCredentials");
@@ -63,6 +64,7 @@ app.get('/', (req, res) => {
 
     io.on('connection', async (socket) => {
         console.log('Socket connection established. Socket id: ' + socket.id)
+        console.log(`Welcome to Deck Optimmizer ${packageJson.version}!`, socket);
         const credentials = await getCredentials();
         const slidesOptimizer = new GoogleSlidesOptimizer(credentials);
 
