@@ -25,6 +25,18 @@ const log_stdout = process.stdout;
 
 const toHref = (url, label) => '<a target="_blank" href="' + url + '">' + (label || url) + '</a>';
 
+function removeFilesAndDirectory(directory) {
+    try {
+        const filesArr = fs.readdirSync(directory);
+        for (const file of filesArr) {
+            fs.unlinkSync(path.resolve(path.join(directory, file)));
+        }
+        fs.rmdirSync(directory)
+    } catch (e) {
+        console.error(e);
+    }
+}
+
 console.log = function (d, socket) {
     log_stdout.write(util.format(d) + '\n');
     if (socket) socket.emit('update message', {data: d});
@@ -112,8 +124,8 @@ app.get('/', (req, res) => {
             // apply initial crop/resize, which has to be done anyway
             await Promise.all(gifs.map(gif => {
                 return limit(async () => {
-                    const { cropLine, resizeLine } = await getCropAndResizeLines(gif.path, gif);
-                    await optimizeGif(gif.path, gif.path, { cropLine, resizeLine });
+                    const {cropLine, resizeLine} = await getCropAndResizeLines(gif.path, gif);
+                    await optimizeGif(gif.path, gif.path, {cropLine, resizeLine});
                     socket.emit('DisplayTxt', {txt: `Cropped/Resized #${counter} of ${gifs.length} images...`});
                 });
             }))
@@ -181,7 +193,7 @@ app.get('/', (req, res) => {
                     await optimizeGif(sourceImagePath, outputImagePath, {factor, colourRange});
                     const stats = await getOptimizationStats(sourceImagePath, outputImagePath);
 
-                    counter+=1;
+                    counter += 1;
                     console.log(`# ${counter} of ${unoptimizedGifsArray.length}, Input: ${formatSizeUnits(stats.sourceSize)}, Output: ${formatSizeUnits(stats.outputSize)}, Optimization: ${Math.round(stats.optimizationPercentage)}%`, socket);
                 });
             }));
@@ -191,7 +203,7 @@ app.get('/', (req, res) => {
                 const [id] = optimizedGif.split(`_optimized.gif`);
                 const outputImagePath = path.resolve(path.join(outputDir, optimizedGif));
                 const outputSize = fs.statSync(outputImagePath).size;
-                return { id, outputImagePath, outputSize }
+                return {id, outputImagePath, outputSize}
             })
 
             const cumulativeOutputSize = optimizedGifsArray.reduce((totalFilesize, currentValue) => {
@@ -229,14 +241,19 @@ app.get('/', (req, res) => {
             const result = await slidesOptimizer.batchReplaceImageUrl(deckData.id, requestsArray);
 
             console.log(`Changing ownership of deck to ${deckData.owner}...`, socket)
-            let ownership_res = await slidesOptimizer.changeOwnership(deckData.id, deckData.owner, deckData.name, requestsArray.length, cumulativeSourceSize-cumulativeOutputSize);
+            let ownership_res = await slidesOptimizer.changeOwnership(deckData.id, deckData.owner, deckData.name, requestsArray.length, cumulativeSourceSize - cumulativeOutputSize);
 
             socket.emit(`finishProcess`, {'link': 'https://docs.google.com/presentation/d/' + deckData.id});
 
-            console.log(`All done! Deck Optimmizer saved ${formatSizeUnits(cumulativeSourceSize-cumulativeOutputSize)} which is a ${Math.round(100 - ((cumulativeOutputSize / cumulativeSourceSize) * 100))}% reduction!`, socket);
+            // quick implementation of cleanup
+            console.log(`Cleaning up files...`, socket);
+            await removeFilesAndDirectory(sourceDir);
+            await removeFilesAndDirectory(outputDir);
+
+            console.log(`All done! Deck Optimmizer saved ${formatSizeUnits(cumulativeSourceSize - cumulativeOutputSize)} which is a ${Math.round(100 - ((cumulativeOutputSize / cumulativeSourceSize) * 100))}% reduction!`, socket);
             console.log(`New Presentation URL:<br>${toHref('https://docs.google.com/presentation/d/' + deckData.id)}`, socket);
 
-            
+
         });
 
 
