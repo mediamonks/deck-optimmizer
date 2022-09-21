@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Deck Optimmizer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;900&display=swap" rel="stylesheet">
+    <script src="https://apis.google.com/js/platform.js?onload=init" async defer></script>
+    <script src="https://apis.google.com/js/platform.js" async defer></script>
+    <meta name="google-signin-client_id"
+          content="891852856749-q0k1uekqoku5oiqlgdps6ke07j3qe4q3.apps.googleusercontent.com">
+    <link href="css/main.css" rel="stylesheet">
+</head>
+<body>
+<div class="main">
+    <div id="accountbar">
+        <button id="signOutButton" onclick="signOut();">Sign Out</a></button>
+    </div>
+
+    <img class="logo-img" src="img/logo_small.png"/>
+
+    <div id="welcome">
+        <h2>Welcome! Before you optimize your deck please read the instructions before proceeding!</h2>
+        This optimmizer tool was developed to reduce the size of GIFs in a Google Slides deck by creating a <b>copy
+        deck</b>
+        with optimized GIFs replacing the originals.<br><br>
+        Due to the limitations of Google Slides the GIFs may not always look 100% the same as the original, nor does the
+        copy keep any record of comments or tasks.<br>
+        Please be aware that we take no responsibility for any changes made to decks.<br><br>
+        <h2><b>Sign in with your Google Account before proceeding</b></h2>
+        <div class="g-signin2" id="signIn" data-onsuccess="onSignIn"></div>
+<!--        <button type="button" id="beginButton" onclick="displayMain()">Continue</button>-->
+    </div>
+
+    <div id="helpTxt">
+        <div id="instructImageContainer">
+            <img src="./img/instructions.png" alt="" id="instructionsGraphic">
+        </div>
+        <div id="instructTxt">
+            <h2 id="instructiontTitle">We will need access for optimization!</h2>
+            <ul>
+                <li>1. Copy the following email address, you’ll need it for step 3:</li>
+                <li id="copyContainer">
+                    <div id="shareEmail">
+                        <textarea readonly type="text" rows="1" id="shareEmailTxt">utl-workato@mediamonks.com</textarea>
+                    </div>
+                    <div id="copyButton" onclick="copyText()">
+                        <img id="copyIcon" src="./img/content_copy.png">
+                        Copy
+                    </div>
+                </li>
+                <li>2. Click the "Share" button in the upper right corner of the deck.</li>
+                <li>3. Paste the copied email address and make sure to grant “editor” access.</li>
+                <li>4. Copy the URL of the deck, you’ll need this for the final step.</li>
+                <li>5. Share the deck.</li>
+            </ul>
+        </div>
+    </div>
+
+    <form class='form' id="form" action="">
+        <label>Finally, paste the URL of the deck below and hit “Optimize”.</label>
+        <div id="optimizeContainer">
+            <input id="input" autocomplete="off"
+                   onpaste="document.getElementById('optimizeBtn').style.background='#F8F9FA'"/>
+            <button id="optimizeBtn" class="optimize">Optimize</button>
+        </div>
+    </form>
+
+    <div id="log">
+        <ul id="messages"></ul>
+    </div>
+
+    <form id="optimizeChoice">
+        <div id="optimizeChoiceContainer">
+            <input type="radio" name="optimizeChoice" value="auto" id="AutoOptimize" onclick=DisplayAuto()>
+            <label for="auto" id="autoLabel" onclick="toggleSelection(event)">Auto-Optimize</label>
+            <input type="radio" name="optimizeChoice" value="manual" id="ManualOptimize" onclick=DisplayManual()>
+            <label for="manual" id="manLabel" onclick="toggleSelection(event)">Optimize Individually</label>
+        </div>
+    </form>
+
+    <div id="choiceContainer">
+        <div id="instructions">
+            <h2 id="instructionHeader">Choose your compression settings</h2>
+            <p id="instructionText">
+            <ol id="instructList">
+                <li>Set your lossy compression:<br>
+                    This will alter image colours to shrink output file size at the cost of artifacts and noise.<br>
+                    0 compression means no change will be applied, 256 is the highest compression.<br><br>
+                </li>
+                <li>Set the colour range:<br>
+                    This will reduce (if possible) the number of distinct colors in each GIF.<br>
+                    256 is the max amount of colors possible in a GIF, 2 is the lowest.<br><br>
+                </li>
+                <li id="step3">When you’re finished, click ‘Optimize' or 'Optimize all'.<br><br></li>
+            </ol>
+            </p>
+        </div>
+    </div>
+
+    <div id="autoSettingsContainer"></div>
+
+    <div id="optimizePanel">
+        <ul id="listHeader">
+            <li>Click GIFs below to optimize</li>
+            <li>Settings will appear here</li>
+            <li>Optimized GIF preview</li>
+        </ul>
+    </div>
+
+    <p id="previewTxt"></p>
+    <img id="loader" src="./img/loader.gif">
+
+    <div id="optionsContainer">
+        <form id="optionsForm" action="">
+            <h2>Compression settings:</h2>
+            <!-- <input type="checkbox" id="applyLossy" checked> -->
+            <label for="">Lossy compression:</label>
+            <label for="factor" id="displayFactor">50</label>
+            <div id="displayCompFactor">
+                <label for="factor">Min</label>
+                <input type="range" min="0" max="256" value="50" step="-1" class="slider" id="factor"
+                       oninput="updateSliderValue('factor', 'displayFactor')">
+                <label for="factor">Max</label>
+            </div>
+            <br>
+            <!-- <input type="checkbox" id="applyColourCorrect" checked> -->
+            <label for="">Colour range:</label>
+            <label for="range" id="displayRange">256</label>
+            <div id="displayColourRange">
+                <label for="range">Min</label>
+                <input type="range" min="2" max="256" value="256" class="slider" id="colourRange"
+                       oninput="updateSliderValue('colourRange', 'displayRange')">
+                <label for="range">Max</label>
+            </div>
+            <br>
+            <button type="button" onclick="optimizeGif(event)" id="applyButton">Optimize</button>
+        </form>
+    </div>
+
+    <div id="processOptions">
+        <button type="button" onclick="cancelOptimization(event)" id="cancelBtn">Cancel</button>
+        <button type="button" onclick="updateDeck(event)" id="finishBtn">Finalize deck</button>
+        <button type="button" onclick="location.reload()" id="restart">Optimize another deck</button>
+    </div>
+</div>
+
+</body>
+<script src="/socket.io/socket.io.js"></script>
+<script src="js/main.js"></script>
+</html>

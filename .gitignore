@@ -1,21 +1,9 @@
 .idea
+.env
 node_modules
 credentials.json
 creds.json
 
-
-deck-optimmizer-serviceaccount-creds.json
-
-src/index2.js
-
-src/index3.js
-
-src/index4.js
-
-src/checkCropped.js
-
-img.gif
-
-src/parseGifsicleStdout.js
-
-src/gifInfo.js
+src/html/gif/*.gif
+src/gif/output/*.gif
+src/gif/source/*.gif
