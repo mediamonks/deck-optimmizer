@@ -2,9 +2,9 @@
   "name": "deck-optimmizer",
   "version": "0.56.2",
   "description": "Node.js server application that downloads, optimizes and replaces all GIF files in a given Google Slides presentation.",
-  "main": "./source/node/index.js",
+  "main": "index.js",
   "scripts": {
-    "start": "node source/node/index.js"
+    "start": "node index.js"
   },
   "keywords": [],
   "author": "Mirko van Willigenburg",
