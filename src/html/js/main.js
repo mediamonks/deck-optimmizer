@@ -90,33 +90,66 @@ async function displayOptions(event) {
 
 
 async function optimizeGif(event) {
-    var sourceGif = document.getElementById('source');
-    //var applyLossy = document.querySelector('#applyLossy').checked;
-    var factor = document.getElementById('factor').value;
-    //var applyColourCorrect = document.querySelector('#applyColourCorrect').checked;
-    var colourRange = document.getElementById('colourRange').value;
-    var auto = document.querySelector('#AutoOptimize').checked;
+    const sourceGif = document.getElementById('source');
+    const factor = document.getElementById('factor').value;
+    const colourRange = document.getElementById('colourRange').value;
+    const auto = document.querySelector('#AutoOptimize').checked;
 
-    var button = document.getElementById('applyButton')
-    var img = document.createElement('img');
+    const button = document.getElementById('applyButton')
+    const img = document.createElement('img');
     img.src = "./img/loader1.gif"
     img.style.width = "40px"
     button.innerHTML = ""
     button.appendChild(img)
 
     if (auto) {
-        triggerLog()
         document.getElementById('instructionText').innerHTML = "Please wait while we apply optimization. <br>";
-
-        socket.emit('autoOptimizeAll', {
-            deckData,
-            factor,
-            colourRange
-        });
+        updateDeck();
+        // socket.emit('autoOptimizeAll', {
+        //     deckData,
+        //     factor,
+        //     colourRange
+        // });
 
     } else {
-        socket.emit('applyOptimizeSettings', { 'auto': auto, 'factor': factor, 'colourRange': colourRange, 'gifId': sourceGif.getAttribute('gifId'), 'src': sourceGif.src});
+
+        socket.emit('manualOptimizeSingleGif', {
+            factor,
+            colourRange,
+            gifId: sourceGif.getAttribute('gifId'),
+            deckId: sourceGif.getAttribute('deckId'),
+        });
     }
+};
+
+function updateDeck(event) {
+    // var gifData = {};
+    // document.getElementById('loader').style.display = "inline-block";
+    // document.getElementById('previewTxt').style.display = "block";
+    // document.getElementById('previewTxt').innerHTML = "Updating deck. Please wait."
+    // let googletoken = window.sessionStorage.getItem('google-session');
+    //
+    // const gifElements = document.querySelectorAll('[gifid]');
+    // const deckid = gifElements[0].getAttribute('deckid');
+    // triggerLog()
+    //
+    //
+    // gifElements.forEach(element => {
+    //     gifData[element.getAttribute('gifid')] = element.getAttribute('src')
+    // });
+    //
+    // socket.emit('updateCopyDeck', { 'gifData': gifData, 'deckid': deckid, 'token': googletoken });
+    triggerLog();
+
+    const factor = document.getElementById('factor').value;
+    const colourRange = document.getElementById('colourRange').value;
+    // const token = window.sessionStorage.getItem('google-session');
+
+    socket.emit('autoOptimizeAll', {
+        deckData,
+        factor,
+        colourRange
+    });
 };
 
 function triggerLog(){
@@ -210,24 +243,7 @@ function copyText() {
 
 
 
-function updateDeck(event) {
-    var gifData = {};
-    document.getElementById('loader').style.display = "inline-block";
-    document.getElementById('previewTxt').style.display = "block";
-    document.getElementById('previewTxt').innerHTML = "Updating deck. Please wait."
-    let googletoken = window.sessionStorage.getItem('google-session');
 
-    gifElements = document.querySelectorAll('[gifid]');
-    deckid = gifElements[0].getAttribute('deckid');
-    triggerLog()
-
-
-    gifElements.forEach(element => {
-        gifData[element.getAttribute('gifid')] = element.getAttribute('src')
-    });
-
-    socket.emit('updateCopyDeck', { 'gifData': gifData, 'deckid': deckid, 'token': googletoken });
-};
 
 
 
@@ -268,6 +284,7 @@ socket.on("connect", () => {
     })
 
     socket.on('replaceGif', async function (msg) {
+        console.log(msg.stats)
         //assign timestamp to src to refresh img (does not refresh img if src is the same url)
         document.getElementById('dest').src = (msg.output + '?random=' + new Date().getTime());
         document.getElementById("applyButton").innerHTML = "Gif Optimized!"
@@ -286,6 +303,8 @@ socket.on("connect", () => {
         document.getElementById('log').style.display = "none";
 
         deckData = msg;
+
+        console.log(deckData)
 
         msg.gifs.forEach(gifElement => {
             const targetArea = document.getElementById('optimizePanel');

@@ -25,8 +25,11 @@ module.exports = async function downloadImageToDisk( url, downloadDir, filename)
         writer.on('finish', resolve)
     })
 
+    const fileSize = fs.statSync(downloadPath).size;
+
     return {
         path: downloadPath,
-        ext: extension
+        ext: extension,
+        size: fileSize
     };
 }
