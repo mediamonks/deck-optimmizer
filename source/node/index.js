@@ -111,9 +111,12 @@ app.get('/', (req, res) => {
                     const localGifUrl = `gif/source/${newSlidesId}/${element.objectId}.gif`;
 
                     if (downloadedImage.ext === 'gif') {
+                        let uploadedGifUrl = await slidesOptimizer.uploadFileToS3(downloadedImage.path);
+
                         return {
                             ...element,
                             source: localGifUrl,
+                            s3source: uploadedGifUrl,
                             output: localGifUrl,
                             path: downloadedImage.path,
                             fileSize: downloadedImage.size
@@ -161,9 +164,12 @@ app.get('/', (req, res) => {
             const outputImagePath = `${__dirname}/gif/output/${deckId}/${gifId}_optimized.gif`;
 
             await optimizeGif(sourceImagePath, outputImagePath, {factor, colourRange});
+
+            let uploadedGifUrl = await slidesOptimizer.uploadFileToS3(outputImagePath);
             const stats = await getOptimizationStats(sourceImagePath, outputImagePath)
 
-            socket.emit(`replaceGif`, {output: `gif/output/${deckId}/${gifId}_optimized.gif`, stats});
+            // socket.emit(`replaceGif`, {output: `gif/output/${deckId}/${gifId}_optimized.gif`, stats});
+            socket.emit(`replaceGif`, {output: uploadedGifUrl, stats});
         });
 
 
@@ -260,10 +266,7 @@ app.get('/', (req, res) => {
 
             console.log(`All done! Deck Optimmizer saved ${formatSizeUnits(cumulativeSourceSize - cumulativeOutputSize)} which is a ${Math.round(100 - ((cumulativeOutputSize / cumulativeSourceSize) * 100))}% reduction!`, socket);
             console.log(`New Presentation URL:<br>${toHref('https://docs.google.com/presentation/d/' + deckData.id)}`, socket);
-
-
         });
-
 
         socket.on('deleteGifs', async (props) => {
             const {deckId} = props;
@@ -276,15 +279,11 @@ app.get('/', (req, res) => {
             await removeFilesAndDirectory(sourceDir);
             await removeFilesAndDirectory(outputDir);
         });
-
-
     });
-
 
     http.listen(port, () => {
-        console.log(`Deck Optimmizer - Server running at http://localhost:${port}/`);
+        console.log(`Deck Optimmizer ${packageJson.version} - Server running at http://localhost:${port}/`);
     });
-
 })();
 
 
