@@ -295,7 +295,7 @@ socket.on("connect", () => {
 
             // Source gif
             ul.appendChild(li);
-            gif.src = gifElement.source;
+            gif.src = gifElement.s3source;
             gif.setAttribute('gifId', gifElement.objectId);
             gif.setAttribute('deckId', msg.id);
             li.appendChild(gif);
