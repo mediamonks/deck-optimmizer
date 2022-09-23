@@ -1,6 +1,4 @@
-org: mirkovanw
-app: my-test-apps
-service: deckoptimmizer-serverless-test
+org: mediamonks
 
 frameworkVersion: '3'
 
