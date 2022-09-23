@@ -6,21 +6,10 @@ frameworkVersion: '3'
 
 provider:
   name: aws
-  runtime: nodejs14.x
+  runtime: nodejs16.x
   stage: dev
   region: eu-central-1
 
 functions:
   hello:
     handler: handler.hello
-    layers:
-      - { Ref: GifsicleLambdaLayer }
-    url: true
-    environment:
-      BUCKET: ${param:bucket}
-      KEY_ID: ${param:keyId}
-      KEY_SECRET: ${param:keySecret}
-
-layers:
-  gifsicle:
-    path: layer
