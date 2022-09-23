@@ -4,7 +4,6 @@ const AWS = require("aws-sdk");
 const path = require("path");
 const {OAuth2Client} = require('google-auth-library'); // todo: remove dependency on this and use googleapis instead
 const request = require('request'); // todo: remove dependency on this outdated package and use axios instead
-const dotenv = require('dotenv');
 const axios = require("axios");
 
 class GoogleSlidesOptimizer {
@@ -34,8 +33,6 @@ class GoogleSlidesOptimizer {
 
     async generateAccessToken() {
         // generates workato access token
-        // await dotenv.config();
-
         const url = 'https://apim.workato.com/oauth2/token';
         const headers = {
             'Content-Type': 'application/x-www-form-urlencoded'
