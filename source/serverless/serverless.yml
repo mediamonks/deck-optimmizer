@@ -1,4 +1,5 @@
 org: mediamonks
+service: deckoptimmizer-serverless-test
 
 frameworkVersion: '3'
 
