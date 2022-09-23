@@ -344,7 +344,7 @@ socket.on("connect", () => {
     })
 
     socket.on('update message', function (msg) {
-        var item = document.createElement('li');
+        const item = document.createElement('li');
         item.innerHTML = msg.data;
         messages.insertBefore(item, messages.firstChild);
         console.log(msg.data)

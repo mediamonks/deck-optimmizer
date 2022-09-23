@@ -8,8 +8,6 @@ const io = require('socket.io')(http, {
 const util = require("util");
 const path = require('path');
 const fs = require("fs");
-const sizeOf = util.promisify(require('image-size'))
-const cliProgress = require('cli-progress');
 const packageJson = require('./package.json');
 
 const GoogleSlidesOptimizer = require("./util/GoogleSlidesImageOptimizer");
@@ -17,7 +15,6 @@ const getCredentials = require("./util/getCredentials");
 const downloadImageToDisk = require("./util/downloadImageToDisk");
 const formatSizeUnits = require("./util/formatSizeUnits");
 const optimizeGif = require("./util/optimizeGif");
-const cropGif = require("./util/cropGif");
 const getOptimizationStats = require("./util/getOptimizationStats")
 const getCropAndResizeLines = require("./util/getCropAndResizeLines")
 
@@ -56,11 +53,10 @@ app.get('/', (req, res) => {
 (async () => {
     // set up plimit
     const pLimit = await import('p-limit'); // using this ESM package to limit concurrency of promises
-    const limit = pLimit.default(128); // set limit to 100 promises at a time
+    const limit = pLimit.default(64); // set limit to 100 promises at a time
     const gifOptimizeLimit = pLimit.default(16); // smaller limit for the gif optimize
 
-    // create a new progressbar
-    const progressBar = new cliProgress.SingleBar({}, cliProgress.Presets.shades_classic);
+    const baseUrl = `https://deck-optimmizer.monks.tools/`;
 
     io.on('connection', async (socket) => {
         console.log('Socket connection established. Socket id: ' + socket.id)
@@ -94,8 +90,6 @@ app.get('/', (req, res) => {
             const imageElements = slidesOptimizer.getImageElements(slidesData);
             console.log(`Found ${imageElements.length} images in slides..`, socket);
 
-            progressBar.start(imageElements.length, 0);
-
             let counter = 0;
             let cumulativeSourceSize = 0;
             const downloadedImages = await Promise.all(imageElements.map(element => {
@@ -105,18 +99,23 @@ app.get('/', (req, res) => {
                     cumulativeSourceSize += downloadedImage.size;
 
                     counter += 1;
-                    progressBar.increment(1);
                     socket.emit('DisplayTxt', {txt: `Downloaded #${counter} of ${imageElements.length} images...`});
 
                     const localGifUrl = `gif/source/${newSlidesId}/${element.objectId}.gif`;
 
                     if (downloadedImage.ext === 'gif') {
-                        let uploadedGifUrl = await slidesOptimizer.uploadFileToS3(downloadedImage.path);
+
+                        // apply initial crop/resize, which has to be done anyway
+                        const {cropLine, resizeLine} = await getCropAndResizeLines(downloadedImage.path, element);
+                        await optimizeGif(downloadedImage.path, downloadedImage.path, {cropLine, resizeLine});
+
+                        //upload the image to s3 bucket
+                        const uploadedGifs3Key = await slidesOptimizer.uploadFileToS3(downloadedImage.path, newSlidesId);
 
                         return {
                             ...element,
                             source: localGifUrl,
-                            s3source: uploadedGifUrl,
+                            s3source: baseUrl + uploadedGifs3Key,
                             output: localGifUrl,
                             path: downloadedImage.path,
                             fileSize: downloadedImage.size
@@ -130,16 +129,16 @@ app.get('/', (req, res) => {
 
             const gifs = downloadedImages.filter(deckImage => deckImage !== 'not a gif');
 
-            counter = 0;
-            // apply initial crop/resize, which has to be done anyway
-            await Promise.all(gifs.map(gif => {
-                return gifOptimizeLimit(async () => {
-                    const {cropLine, resizeLine} = await getCropAndResizeLines(gif.path, gif);
-                    await optimizeGif(gif.path, gif.path, {cropLine, resizeLine});
-                    counter+=1;
-                    socket.emit('DisplayTxt', {txt: `Cropped/Resized #${counter} of ${gifs.length} images...`});
-                });
-            }))
+            // counter = 0;
+            // // apply initial crop/resize, which has to be done anyway
+            // await Promise.all(gifs.map(gif => {
+            //     return gifOptimizeLimit(async () => {
+            //         // const {cropLine, resizeLine} = await getCropAndResizeLines(gif.path, gif);
+            //         // await optimizeGif(gif.path, gif.path, {cropLine, resizeLine});
+            //         // counter+=1;
+            //         // socket.emit('DisplayTxt', {txt: `Cropped/Resized #${counter} of ${gifs.length} images...`});
+            //     });
+            // }))
 
             if (socket) {
                 socket.emit('TriggerDisplayOptions', "");
@@ -153,7 +152,6 @@ app.get('/', (req, res) => {
                 });
             }
 
-            progressBar.stop();
         });
 
 
@@ -165,11 +163,11 @@ app.get('/', (req, res) => {
 
             await optimizeGif(sourceImagePath, outputImagePath, {factor, colourRange});
 
-            let uploadedGifUrl = await slidesOptimizer.uploadFileToS3(outputImagePath);
+            let uploadedGifs3Key = await slidesOptimizer.uploadFileToS3(outputImagePath, deckId);
             const stats = await getOptimizationStats(sourceImagePath, outputImagePath)
 
             // socket.emit(`replaceGif`, {output: `gif/output/${deckId}/${gifId}_optimized.gif`, stats});
-            socket.emit(`replaceGif`, {output: uploadedGifUrl, stats});
+            socket.emit(`replaceGif`, {output: baseUrl + uploadedGifs3Key, stats});
         });
 
 
@@ -242,11 +240,11 @@ app.get('/', (req, res) => {
             let requestsArray = await Promise.all(optimizedGifsArray.map((optimizedGif) => {
                 return limit(async () => {
                     //upload to s3
-                    let uploadedGifUrl = await slidesOptimizer.uploadFileToS3(optimizedGif.outputImagePath);
+                    const uploadedGifs3Key = await slidesOptimizer.uploadFileToS3(optimizedGif.outputImagePath, deckData.id);
 
                     return {
                         id: optimizedGif.id,
-                        url: uploadedGifUrl
+                        url: baseUrl + uploadedGifs3Key
                     }
                 });
             }));

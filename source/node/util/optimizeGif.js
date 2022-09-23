@@ -10,24 +10,16 @@ module.exports = async function optimizeGif(sourceImagePath, outputImagePath, op
     const optimizationArray = [];
 
     // apply desired level of lossiness
-    if (factor) {
-        optimizationArray.push(`--lossy=${factor.toString()}`);
-    }
+    if (factor) optimizationArray.push(`--lossy=${factor.toString()}`);
 
     // apply color correction
-    if (colourRange) {
-        optimizationArray.push(`--colors=${colourRange.toString()}`);
-    }
+    if (colourRange) optimizationArray.push(`--colors=${colourRange.toString()}`);
 
     // apply desired crop if necessary
-    if (cropLine && cropLine !== '') {
-        optimizationArray.push(`--crop=${cropLine.toString()}`);
-    }
+    if (cropLine && cropLine !== '') optimizationArray.push(`--crop=${cropLine.toString()}`);
 
     // apply desired size if necessary
-    if (resizeLine && resizeLine !== '') {
-        optimizationArray.push(`--resize=${resizeLine.toString()}`);
-    }
+    if (resizeLine && resizeLine !== '') optimizationArray.push(`--resize=${resizeLine.toString()}`);
 
     if (!fs.existsSync(path.dirname(outputImagePath))) {
         fs.mkdirSync(path.dirname(outputImagePath)); // if the directory doesn't exist yet, create a new one

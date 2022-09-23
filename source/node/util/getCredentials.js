@@ -1,7 +1,6 @@
-const dotenv = require('dotenv');
+require('dotenv').config();
 
 module.exports = async function getCredentials() {
-    await dotenv.config();
 
     return {
         'google': {
