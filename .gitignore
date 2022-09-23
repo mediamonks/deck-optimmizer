@@ -4,6 +4,4 @@ node_modules
 credentials.json
 creds.json
 
-src/html/gif/*.gif
-src/gif/output/*.gif
-src/gif/source/*.gif
+source/node/gif/**/*.gif
