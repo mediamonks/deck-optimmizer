@@ -138,7 +138,7 @@ class GoogleSlidesOptimizer {
                 if (err) {
                     throw err;
                 }
-                resolve(data.key);
+                resolve(data.Key);
             });
         });
     }
