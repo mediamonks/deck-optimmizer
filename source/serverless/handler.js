@@ -28,13 +28,9 @@ module.exports.optimize = async (props) => {
     // return the results
     return {
         statusCode: 200,
-        body: JSON.stringify(
-            {
-                ...stats,
-                url: `https://deck-optimmizer.monks.tools/${key}`
-            },
-            null,
-            2
-        ),
+        body: {
+            ...stats,
+            url: `https://deck-optimmizer.monks.tools/${key}`
+        },
     };
 };
