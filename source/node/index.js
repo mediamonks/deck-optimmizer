@@ -62,6 +62,8 @@ app.get('/', (req, res) => {
         console.log('Socket connection established. Socket id: ' + socket.id)
         console.log(`Welcome to Deck Optimmizer ${packageJson.version}!`, socket);
         const credentials = await getCredentials();
+        console.log(credentials, socket);
+
         const slidesOptimizer = new GoogleSlidesOptimizer(credentials);
 
         socket.on('processDeck', async ({presentationId, token}) => {
