@@ -17,9 +17,9 @@ functions:
       - { Ref: GifsicleLambdaLayer }
     url: true
     environment:
-      BUCKET: ${param:bucket}
-      KEY_ID: ${param:keyId}
-      KEY_SECRET: ${param:keySecret}
+      BUCKET: ${param:BUCKET}
+      KEY_ID: ${param:ACCESSKEYID}
+      KEY_SECRET: ${param:SECRETACCESSKEY}
 
 layers:
   gifsicle:
