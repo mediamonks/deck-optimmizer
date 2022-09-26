@@ -8,8 +8,8 @@ module.exports = async function uploadImageToS3( filePath, deckId, objectId ) {
     const fileContent = fs.readFileSync(filePath);
 
     const s3 = new AWS.S3({
-        accessKeyId: process.env.KEY_ID,
-        secretAccessKey: process.env.KEY_SECRET
+        accessKeyId: process.env.ACCESSKEYID,
+        secretAccessKey: process.env.SECRETACCESSKEY
     });
 
     const params = {

@@ -15,11 +15,6 @@ functions:
     handler: handler.optimize
     layers:
       - { Ref: GifsicleLambdaLayer }
-    url: true
-    environment:
-      BUCKET: ${param:BUCKET}
-      KEY_ID: ${param:ACCESSKEYID}
-      KEY_SECRET: ${param:SECRETACCESSKEY}
 
 layers:
   gifsicle:
