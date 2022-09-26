@@ -1,5 +1,3 @@
-app: deckoptimmizer
-org: mirkovanw
 service: deckoptimmizer
 
 frameworkVersion: '3'
