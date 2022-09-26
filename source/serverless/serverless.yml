@@ -1,5 +1,6 @@
-org: mediamonks
-service: deckoptimmizer-serverless-test
+app: deckoptimmizer
+org: mirkovanw
+service: deckoptimmizer
 
 frameworkVersion: '3'
 
@@ -10,5 +11,16 @@ provider:
   region: eu-central-1
 
 functions:
-  hello:
-    handler: handler.hello
+  optimize:
+    handler: handler.optimize
+    layers:
+      - { Ref: GifsicleLambdaLayer }
+    url: true
+    environment:
+      BUCKET: ${param:bucket}
+      KEY_ID: ${param:keyId}
+      KEY_SECRET: ${param:keySecret}
+
+layers:
+  gifsicle:
+    path: layer
