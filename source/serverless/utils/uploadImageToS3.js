@@ -23,7 +23,7 @@ module.exports = async function uploadImageToS3( filePath, deckId, objectId ) {
             if (err) {
                 throw err;
             }
-            resolve(data.key);
+            resolve(data.Key);
         });
     });
 }
