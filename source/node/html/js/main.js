@@ -247,6 +247,16 @@ function cancelOptimization(event) {
 };
 
 
+function formatSizeUnits(bytes) {
+    if      (bytes >= 1073741824) { bytes = (bytes / 1073741824).toFixed(2) + " GB"; }
+    else if (bytes >= 1048576)    { bytes = (bytes / 1048576).toFixed(2) + " MB"; }
+    else if (bytes >= 1024)       { bytes = (bytes / 1024).toFixed(2) + " KB"; }
+    else if (bytes > 1)           { bytes = bytes + " bytes"; }
+    else if (bytes === 1)          { bytes = bytes + " byte"; }
+    else                          { bytes = "0 bytes"; }
+    return bytes;
+}
+
 
 socket.on("connect", () => {
     socket.on("TriggerDisplayOptions", async function (){
@@ -265,9 +275,16 @@ socket.on("connect", () => {
     })
 
     socket.on('replaceGif', async function (msg) {
-        console.log(msg.stats)
+        console.log(msg)
         //assign timestamp to src to refresh img (does not refresh img if src is the same url)
         document.getElementById('dest').src = (msg.output + '?random=' + new Date().getTime());
+
+        document.getElementsByClassName(`stats ${msg.gifId}`)[0].innerHTML = `New size: ${formatSizeUnits(msg.stats.outputSize)}, optimization: ${Math.round(msg.stats.optimizationPercentage)}%`;
+
+        if (msg.stats.optimizationPercentage < 5) {
+            
+        }
+
         document.getElementById("applyButton").innerHTML = "Gif Optimized!"
     });
 
@@ -292,6 +309,7 @@ socket.on("connect", () => {
             let ul = document.createElement('ul');
             let li = document.createElement('li');
             let gif = document.createElement('img');
+            let sourceStats = document.createElement('div');
 
             // Source gif
             ul.appendChild(li);
@@ -300,17 +318,28 @@ socket.on("connect", () => {
             gif.setAttribute('deckId', msg.id);
             li.appendChild(gif);
 
+            sourceStats.innerHTML = `Original size: ${formatSizeUnits(gifElement.fileSize)}`;
+            sourceStats.className = 'stats';
+            li.appendChild(sourceStats);
+
             // Options
             ul.appendChild(document.createElement('li'));
 
             // Output gif
             li = document.createElement('li');
             let outputGif = document.createElement('img');
+            let outputStats = document.createElement('div');
+
             ul.appendChild(li);
             //outputGif.src = val['output'];
             outputGif.setAttribute('gifId', gifElement.objectId);
             outputGif.setAttribute('deckId', msg.id);
             li.appendChild(outputGif);
+
+            outputStats.innerHTML = ``;
+            outputStats.className = `stats ${gifElement.objectId}`;
+            outputStats.setAttribute('gifId', gifElement.objectId)
+            li.appendChild(outputStats);
 
             gif.addEventListener("click", displayOptions, false);
             targetArea.appendChild(ul);

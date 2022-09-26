@@ -511,3 +511,7 @@ textarea {
     padding: 2px;
     resize: none;
 }
+
+.stats {
+    font-size: 12px;
+}

@@ -102,13 +102,14 @@ app.get('/', (req, res) => {
                     counter += 1;
                     socket.emit('DisplayTxt', {txt: `Downloaded #${counter} of ${imageElements.length} images...`});
 
-                    const localGifUrl = `gif/source/${newSlidesId}/${element.objectId}.gif`;
-
                     if (downloadedImage.ext === 'gif') {
+                        const localGifUrl = `gif/source/${newSlidesId}/${element.objectId}.gif`;
 
                         // apply initial crop/resize, which has to be done anyway
                         const {cropLine, resizeLine} = await getCropAndResizeLines(downloadedImage.path, element);
-                        await optimizeGif(downloadedImage.path, downloadedImage.path, {cropLine, resizeLine});
+                        if (cropLine !== '' || resizeLine !== '') {
+                            await optimizeGif(downloadedImage.path, downloadedImage.path, {cropLine, resizeLine});
+                        }
 
                         //upload the image to s3 bucket
                         const uploadedGifs3Key = await slidesOptimizer.uploadFileToS3(downloadedImage.path, newSlidesId);
@@ -122,24 +123,18 @@ app.get('/', (req, res) => {
                             fileSize: downloadedImage.size
                         }
                     } else {
-                        fs.unlinkSync(downloadedImage.path); // get rid of image if not gif
+                        try {
+                            fs.unlinkSync(downloadedImage.path); // get rid of image if not gif
+                        } catch (e) {
+                            console.log(`could not remove ${downloadedImage.path}`)
+                        }
+
                         return 'not a gif';
                     }
                 });
             }))
 
             const gifs = downloadedImages.filter(deckImage => deckImage !== 'not a gif');
-
-            // counter = 0;
-            // // apply initial crop/resize, which has to be done anyway
-            // await Promise.all(gifs.map(gif => {
-            //     return gifOptimizeLimit(async () => {
-            //         // const {cropLine, resizeLine} = await getCropAndResizeLines(gif.path, gif);
-            //         // await optimizeGif(gif.path, gif.path, {cropLine, resizeLine});
-            //         // counter+=1;
-            //         // socket.emit('DisplayTxt', {txt: `Cropped/Resized #${counter} of ${gifs.length} images...`});
-            //     });
-            // }))
 
             if (socket) {
                 socket.emit('TriggerDisplayOptions', "");
@@ -152,7 +147,6 @@ app.get('/', (req, res) => {
                     gifs
                 });
             }
-
         });
 
 
@@ -168,7 +162,7 @@ app.get('/', (req, res) => {
             const stats = await getOptimizationStats(sourceImagePath, outputImagePath)
 
             // socket.emit(`replaceGif`, {output: `gif/output/${deckId}/${gifId}_optimized.gif`, stats});
-            socket.emit(`replaceGif`, {output: baseUrl + uploadedGifs3Key, stats});
+            socket.emit(`replaceGif`, {output: baseUrl + uploadedGifs3Key, gifId, stats});
         });
 
 
