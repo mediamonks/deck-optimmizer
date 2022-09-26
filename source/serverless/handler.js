@@ -10,23 +10,6 @@ const getOptimizationStats = require('./utils/getOptimizationStats');
 module.exports.optimize = async (props) => {
     const { sourceUrl, objectId, deckId, optimizeOptions } = props
 
-
-    const bucket = process.env.BUCKET;
-    const keyId = process.env.ACCESSKEYID;
-    const keySecret = process.env.SECRETACCESSKEY;
-
-    // return the results
-    return {
-        statusCode: 200,
-        body: JSON.stringify(
-            {
-                message: `${bucket}, ${keyId}, ${keySecret}`
-            },
-            null,
-            2
-        ),
-    };
-
     const tmpImgName = uuidv4();
     const tmpDir = `/tmp`;
     const outputImagePath = `${tmpDir}/${tmpImgName}_optimized.gif`;
