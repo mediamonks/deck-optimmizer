@@ -11,8 +11,8 @@ module.exports = async function downloadImageToDisk( url, downloadDir, filename)
         responseType: 'stream'
     })
 
-    // const contentType = originalImageFile.headers['content-type'];
-    // const extension = mime.getExtension(contentType)
+    const contentType = originalImageFile.headers['content-type'];
+    const extension = mime.getExtension(contentType)
     // const downloadPath = path.join(downloadDir, (`${filename}.${extension}`));
 
     const downloadPath = `/tmp/${filename}.gif`;
@@ -23,5 +23,8 @@ module.exports = async function downloadImageToDisk( url, downloadDir, filename)
         writer.on('finish', resolve)
     })
 
-    return downloadPath;
+    return {
+        path: downloadPath,
+        ext: extension
+    };
 }

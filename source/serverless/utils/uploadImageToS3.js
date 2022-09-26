@@ -3,7 +3,7 @@ const AWS = require("aws-sdk");
 const path = require('path');
 // var scriptName = path.basename(__filename);
 
-module.exports = async function uploadImageToS3( filePath, deckId, objectId ) {
+module.exports = async function uploadImageToS3( filePath, Key ) {
     const bucket = process.env.BUCKET;
     const fileContent = fs.readFileSync(filePath);
 
@@ -14,7 +14,8 @@ module.exports = async function uploadImageToS3( filePath, deckId, objectId ) {
 
     const params = {
         Bucket: bucket,
-        Key: `data/${deckId}/${objectId}_optimized.gif`, // File name you want to save as in S3
+        //Key: `data/${deckId}/${objectId}_optimized.gif`, // File name you want to save as in S3
+        Key,
         Body: fileContent
     };
 
