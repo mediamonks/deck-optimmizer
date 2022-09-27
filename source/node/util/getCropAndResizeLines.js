@@ -1,11 +1,11 @@
 const util = require("util");
-const sizeOf = util.promisify(require('image-size'))
+// const sizeOf = util.promisify(require('image-size'))
 
-module.exports = async function getCropAndResizeLines(sourceImagePath, element) {
+module.exports = async function getCropAndResizeLines(imgWidth, imgHeight, element) {
     //check image dimensions
-    let imgDimensions = await sizeOf(sourceImagePath);
-    let imgWidth = imgDimensions.width;
-    let imgHeight = imgDimensions.height;
+    // let imgDimensions = await sizeOf(sourceImagePath);
+    // let imgWidth = imgDimensions.width;
+    // let imgHeight = imgDimensions.height;
 
     // set "trueScale", name I came up with for the actual scale when a image is 1:1 pixels in fullscreen presenting mode
     const trueScaleX = 190.5; // 381/2 and 381x25 = 9525
@@ -46,12 +46,12 @@ module.exports = async function getCropAndResizeLines(sourceImagePath, element) 
         // additional check to see if resize is actually needed by calculating the full rendered image dimensions, without crop
         let fullWidth = (renderedImgWidth / ((1 - (cropProps.leftOffset + cropProps.rightOffset)) * 100)) * 100;
         let fullHeight = (renderedImgHeight / ((1 - (cropProps.topOffset + cropProps.bottomOffset)) * 100)) * 100;
-        console.log('Rendered image dimensions without crop: ' + Math.round(fullWidth) + 'x' + Math.round(fullHeight))
+        //console.log('Rendered image dimensions without crop: ' + Math.round(fullWidth) + 'x' + Math.round(fullHeight))
 
         if (fullWidth / imgWidth < 0.95 || fullHeight / imgHeight < 0.95) {
 
         } else {
-            console.log('no resize required. uncropped image is not actually scaled down.')
+            //console.log('no resize required. uncropped image is not actually scaled down.')
             resizeLine = '';
         }
     }

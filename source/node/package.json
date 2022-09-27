@@ -1,6 +1,6 @@
 {
   "name": "deck-optimmizer",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "Node.js server application that downloads, optimizes and replaces all GIF files in a given Google Slides presentation.",
   "main": "index.js",
   "scripts": {
@@ -30,12 +30,14 @@
     "gifsicle": "^5.3.0",
     "googleapis": "^100.0.0",
     "image-size": "^1.0.1",
+    "image-type": "^4.1.0",
     "inquirer": "^8.2.2",
     "jsonwebtoken": "^8.5.1",
     "mime": "^3.0.0",
     "mongoose": "^6.5.0",
     "open": "^8.4.0",
     "p-limit": "^4.0.0",
+    "probe-image-size": "^7.2.3",
     "request": "^2.88.2",
     "server-destroy": "^1.0.1",
     "socket.io": "^4.4.1",

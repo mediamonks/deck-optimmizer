@@ -7,32 +7,26 @@ const io = require('socket.io')(http, {
 });
 const util = require("util");
 const path = require('path');
-const fs = require("fs");
 const packageJson = require('./package.json');
+const probe = require('probe-image-size');
 
 const GoogleSlidesOptimizer = require("./util/GoogleSlidesImageOptimizer");
 const getCredentials = require("./util/getCredentials");
-const downloadImageToDisk = require("./util/downloadImageToDisk");
 const formatSizeUnits = require("./util/formatSizeUnits");
-const optimizeGif = require("./util/optimizeGif");
-const getOptimizationStats = require("./util/getOptimizationStats")
+const optimizeGifSls = require('./util/optimizeGifSls')
 const getCropAndResizeLines = require("./util/getCropAndResizeLines")
+const getObjectsInS3Bucket = require('./util/getObjectsInS3Bucket');
 
 const port = process.env.PORT || 3000;
 const log_stdout = process.stdout;
 
 const toHref = (url, label) => '<a target="_blank" href="' + url + '">' + (label || url) + '</a>';
 
-function removeFilesAndDirectory(directory) {
-    try {
-        const filesArr = fs.readdirSync(directory);
-        for (const file of filesArr) {
-            fs.unlinkSync(path.resolve(path.join(directory, file)));
-        }
-        fs.rmdirSync(directory)
-    } catch (e) {
-        console.error(e);
-    }
+const getObjectIdFromS3Key = (key, deckId) => {
+    // returns id 'g124586d1df0_0_12' from string like 'data/1XL7_Sg-aJDiEjGF4CIxpD_Z-driXg8_US0vLtOX9C58/g124586d1df0_0_12_optimized.gif'
+    let [_, url2] = key.split(`data/${deckId}/`);
+    let [id] = url2.split('_optimized');
+    return id;
 }
 
 console.log = function (d, socket) {
@@ -53,7 +47,7 @@ app.get('/', (req, res) => {
 (async () => {
     // set up plimit
     const pLimit = await import('p-limit'); // using this ESM package to limit concurrency of promises
-    const limit = pLimit.default(64); // set limit to 100 promises at a time
+    const limit = pLimit.default(128); // set limit to 100 promises at a time
     const gifOptimizeLimit = pLimit.default(16); // smaller limit for the gif optimize
 
     const baseUrl = `https://deck-optimmizer.monks.tools/`;
@@ -70,19 +64,18 @@ app.get('/', (req, res) => {
             const tokenData = await slidesOptimizer.verifyToken(token)
             const payload = tokenData.getPayload()
 
-            // extract slides ID from string
-            console.log('presentationId:' + presentationId)
+            // copy source slides to new slides
             console.log(`Making a temporary copy of slides with ID ${presentationId}...`, socket)
             socket.emit('DisplayTxt', {txt: `Making a temporary copy of slides with ID ${presentationId}...`});
-
-            // copy source slides to new slides
             let newSlidesId = await slidesOptimizer.copySlides(presentationId, payload['email'])
 
             if (newSlidesId === 500) {
                 socket.emit('noAccess', {});
                 return;
             }
-            console.log('Copied source slides to new presentation with ID: ' + newSlidesId, socket)
+
+            console.log(`Copied source slides to new presentation with ID: ${newSlidesId}`, socket)
+            socket.emit('DisplayTxt', {txt: `Copied source slides to new presentation with ID: ${newSlidesId}`});
 
             // get all slides data
             const slidesData = await slidesOptimizer.getSlides(newSlidesId);
@@ -91,50 +84,59 @@ app.get('/', (req, res) => {
             const imageElements = slidesOptimizer.getImageElements(slidesData);
             console.log(`Found ${imageElements.length} images in slides..`, socket);
 
+            // probe all image URLs and check which are GIFs
             let counter = 0;
-            let cumulativeSourceSize = 0;
-            const downloadedImages = await Promise.all(imageElements.map(element => {
+            let gifElements = await Promise.all(imageElements.map(element => {
                 return limit(async () => {
-                    const path = `${__dirname}/gif/source/${newSlidesId}/`;
-                    const downloadedImage = await downloadImageToDisk(element.image.contentUrl, path, element.objectId);
-                    cumulativeSourceSize += downloadedImage.size;
-
+                    const fileData = await probe(element.image.contentUrl);
                     counter += 1;
-                    socket.emit('DisplayTxt', {txt: `Downloaded #${counter} of ${imageElements.length} images...`});
+                    socket.emit('DisplayTxt', {txt: `Checked #${counter} of ${imageElements.length} images...`});
 
-                    if (downloadedImage.ext === 'gif') {
-                        const localGifUrl = `gif/source/${newSlidesId}/${element.objectId}.gif`;
-
-                        // apply initial crop/resize, which has to be done anyway
-                        const {cropLine, resizeLine} = await getCropAndResizeLines(downloadedImage.path, element);
-                        if (cropLine !== '' || resizeLine !== '') {
-                            await optimizeGif(downloadedImage.path, downloadedImage.path, {cropLine, resizeLine});
-                        }
-
-                        //upload the image to s3 bucket
-                        const uploadedGifs3Key = await slidesOptimizer.uploadFileToS3(downloadedImage.path, newSlidesId);
-
+                    if (fileData.type === 'gif') {
                         return {
                             ...element,
-                            source: localGifUrl,
-                            s3source: baseUrl + uploadedGifs3Key,
-                            output: localGifUrl,
-                            path: downloadedImage.path,
-                            fileSize: downloadedImage.size
-                        }
+                            fileData
+                        };
                     } else {
-                        try {
-                            fs.unlinkSync(downloadedImage.path); // get rid of image if not gif
-                        } catch (e) {
-                            console.log(`could not remove ${downloadedImage.path}`)
-                        }
-
                         return 'not a gif';
                     }
-                });
-            }))
+                })
+            }));
 
-            const gifs = downloadedImages.filter(deckImage => deckImage !== 'not a gif');
+            gifElements = gifElements.filter(element => element !== 'not a gif');
+            console.log(`Found ${gifElements.length} GIFs in slides..`, socket);
+            socket.emit('DisplayTxt', {txt: `Found ${gifElements.length} GIFs in slides..`});
+
+            let cumulativeSourceSize = 0;
+            counter = 0;
+            const gifs = await Promise.all(gifElements.map(element => {
+                return limit(async () => {
+                    const {
+                        cropLine,
+                        resizeLine
+                    } = await getCropAndResizeLines(element.fileData.width, element.fileData.height, element);
+
+                    const processedGif = await optimizeGifSls({
+                        sourceUrl: element.image.contentUrl,
+                        deckId: newSlidesId,
+                        objectId: element.objectId,
+                        suffix: 'source',
+                        optimizeOptions: {
+                            cropLine, resizeLine
+                        }
+                    }); // returns { url, ext, sourceSize, outputSize, optimizationSize, optimizationPercentage }
+
+                    counter += 1;
+                    socket.emit('DisplayTxt', {txt: `Processed #${counter} of ${gifElements.length} GIFs...`});
+
+                    cumulativeSourceSize += processedGif.sourceSize;
+
+                    return {
+                        sourceElement: element,
+                        source: processedGif
+                    }
+                })
+            }))
 
             if (socket) {
                 socket.emit('TriggerDisplayOptions', "");
@@ -149,80 +151,73 @@ app.get('/', (req, res) => {
             }
         });
 
+        socket.on('manualOptimizeSingleGif', async ({deckId, gifId, sourceUrl, factor, colourRange}) => {
 
-        socket.on('manualOptimizeSingleGif', async (props) => {
-            const {deckId, gifId, factor, colourRange} = props;
+            const processedGif = await optimizeGifSls({
+                sourceUrl,
+                deckId: deckId,
+                objectId: gifId,
+                suffix: 'optimized',
+                optimizeOptions: {
+                    factor, colourRange
+                }
+            }); // returns { url, ext, sourceSize, outputSize, optimizationSize, optimizationPercentage }
 
-            const sourceImagePath = `${__dirname}/gif/source/${deckId}/${gifId}.gif`;
-            const outputImagePath = `${__dirname}/gif/output/${deckId}/${gifId}_optimized.gif`;
-
-            await optimizeGif(sourceImagePath, outputImagePath, {factor, colourRange});
-
-            let uploadedGifs3Key = await slidesOptimizer.uploadFileToS3(outputImagePath, deckId);
-            const stats = await getOptimizationStats(sourceImagePath, outputImagePath)
-
-            // socket.emit(`replaceGif`, {output: `gif/output/${deckId}/${gifId}_optimized.gif`, stats});
-            socket.emit(`replaceGif`, {output: baseUrl + uploadedGifs3Key, gifId, stats});
+            socket.emit(`replaceGif`, {output: processedGif.url, gifId, stats: processedGif});
         });
 
-
-        socket.on('autoOptimizeAll', async (props) => {
-            let {deckData, factor, colourRange} = props;
-            const cumulativeSourceSize = deckData.cumulativeSourceSize;
-            let counter = 0;
-
-            const sourceDir = `${__dirname}/gif/source/${deckData.id}/`;
-            const outputDir = `${__dirname}/gif/output/${deckData.id}/`;
-
+        socket.on('autoOptimizeAll', async ({deckData, factor, colourRange}) => {
             // find out which gifs still need optimization. at this point some gifs may not have been optimized yet
-            // so compare gifs in source folder vs _optimized gifs in output folder
             let unoptimizedGifsArray;
-            if (fs.existsSync(outputDir)) {
-                let optimizedGifsIds = fs.readdirSync(outputDir);
-                optimizedGifsIds = optimizedGifsIds.map(optimizedGif => {
-                    const [optimizedGifId] = optimizedGif.split(`_optimized.gif`);
-                    return optimizedGifId;
-                })
-
-                unoptimizedGifsArray = deckData.gifs.filter(sourceGif => !optimizedGifsIds.includes(sourceGif.objectId));
-                console.log(`Found ${unoptimizedGifsArray.length} GIF images that have not been (manually) optimized yet, optimizing now..`, socket);
+            const allGifsInBucketDir = await getObjectsInS3Bucket({Prefix: `data/${deckData.id}/`})
+            if (allGifsInBucketDir.length > 0) {
+                const optimizedGifs = allGifsInBucketDir.filter(gif => gif.Key.includes('_optimized'));
+                const optimizedGifIds = optimizedGifs.map(gif => getObjectIdFromS3Key(gif.Key, deckData.id));
+                unoptimizedGifsArray = deckData.gifs.filter(sourceGif => !optimizedGifIds.includes(sourceGif.sourceElement.objectId));
             } else {
                 unoptimizedGifsArray = deckData.gifs; // do them all
             }
 
-            // optimize the remaining gifs with limited concurrency
+            console.log(`Found ${unoptimizedGifsArray.length} GIF images that have not been (manually) optimized yet, optimizing now..`, socket);
+
+            let counter = 0;
             await Promise.all(unoptimizedGifsArray.map((element) => {
                 return gifOptimizeLimit(async () => {
-                    const sourceImagePath = `${sourceDir}/${element.objectId}.gif`;
-                    const outputImagePath = `${outputDir}/${element.objectId}_optimized.gif`;
 
-                    //optimize gif
-                    await optimizeGif(sourceImagePath, outputImagePath, {factor, colourRange});
-                    const stats = await getOptimizationStats(sourceImagePath, outputImagePath);
+                    //optimize gif via serverless function
+                    const optimizedGif = await optimizeGifSls({
+                        sourceUrl: element.source.url,
+                        deckId: deckData.id,
+                        objectId: element.sourceElement.objectId,
+                        suffix: 'optimized',
+                        optimizeOptions: {
+                            factor, colourRange
+                        }
+                    }); // returns { url, ext, sourceSize, outputSize, optimizationSize, optimizationPercentage }
 
                     counter += 1;
-                    console.log(`# ${counter} of ${unoptimizedGifsArray.length}, Input: ${formatSizeUnits(stats.sourceSize)}, Output: ${formatSizeUnits(stats.outputSize)}, Optimization: ${Math.round(stats.optimizationPercentage)}%`, socket);
+                    console.log(`# ${counter} of ${unoptimizedGifsArray.length}, Input: ${formatSizeUnits(optimizedGif.sourceSize)}, Output: ${formatSizeUnits(optimizedGif.outputSize)}, Optimization: ${Math.round(optimizedGif.optimizationPercentage)}%`, socket);
                 });
             }));
 
-            let optimizedGifsArray = fs.readdirSync(outputDir);
-            optimizedGifsArray = optimizedGifsArray.map(optimizedGif => {
-                const [id] = optimizedGif.split(`_optimized.gif`);
-                const outputImagePath = path.resolve(path.join(outputDir, optimizedGif));
-                const outputSize = fs.statSync(outputImagePath).size;
-                return {id, outputImagePath, outputSize}
+            let allGifsInS3BucketArray = await getObjectsInS3Bucket({Prefix: `data/${deckData.id}/`})
+            allGifsInS3BucketArray = allGifsInS3BucketArray.filter(gifObject => gifObject.Key.includes('_optimized'));
+
+            let requestsArray = allGifsInS3BucketArray.map(gif => {
+                return {
+                    id: getObjectIdFromS3Key(gif.Key, deckData.id),
+                    outputSize: gif.Size,
+                    url: baseUrl + gif.Key
+                }
             })
 
-            const cumulativeOutputSize = optimizedGifsArray.reduce((totalFilesize, currentValue) => {
+            const cumulativeOutputSize = requestsArray.reduce((totalFilesize, currentValue) => {
                 totalFilesize += currentValue.outputSize;
                 return totalFilesize;
             }, 0);
 
-            console.log('totalFilesize = ' + cumulativeOutputSize);
-            console.log(`optimizedGifsArray length ${optimizedGifsArray.length}`);
-
             // remove gifs that are > 50mb
-            optimizedGifsArray = optimizedGifsArray.filter(optimizedGif => {
+            requestsArray = requestsArray.filter(optimizedGif => {
                 if (optimizedGif.outputSize < 50000000) {
                     return optimizedGif;
                 } else {
@@ -230,47 +225,18 @@ app.get('/', (req, res) => {
                 }
             });
 
-            // upload all to S3
-            console.log(`Uploading ${optimizedGifsArray.length} images to s3 bucket...`, socket)
-            let requestsArray = await Promise.all(optimizedGifsArray.map((optimizedGif) => {
-                return limit(async () => {
-                    //upload to s3
-                    const uploadedGifs3Key = await slidesOptimizer.uploadFileToS3(optimizedGif.outputImagePath, deckData.id);
-
-                    return {
-                        id: optimizedGif.id,
-                        url: baseUrl + uploadedGifs3Key
-                    }
-                });
-            }));
-
             console.log(`Sending request to Slides API to batch replace ${requestsArray.length} images...`, socket)
             const result = await slidesOptimizer.batchReplaceImageUrl(deckData.id, requestsArray);
 
             console.log(`Changing ownership of deck to ${deckData.owner}...`, socket)
-            let ownership_res = await slidesOptimizer.changeOwnership(deckData.id, deckData.owner, deckData.name, requestsArray.length, cumulativeSourceSize - cumulativeOutputSize);
+            let ownership_res = await slidesOptimizer.changeOwnership(deckData.id, deckData.owner, deckData.name, requestsArray.length, deckData.cumulativeSourceSize - cumulativeOutputSize);
 
             socket.emit(`finishProcess`, {'link': 'https://docs.google.com/presentation/d/' + deckData.id});
 
-            // quick implementation of cleanup
-            console.log(`Cleaning up files...`, socket);
-            await removeFilesAndDirectory(sourceDir);
-            await removeFilesAndDirectory(outputDir);
+            // TODO Clean up files on bucket
 
-            console.log(`All done! Deck Optimmizer saved ${formatSizeUnits(cumulativeSourceSize - cumulativeOutputSize)} which is a ${Math.round(100 - ((cumulativeOutputSize / cumulativeSourceSize) * 100))}% reduction!`, socket);
+            console.log(`All done! Deck Optimmizer saved ${formatSizeUnits(deckData.cumulativeSourceSize - cumulativeOutputSize)} which is a ${Math.round(100 - ((cumulativeOutputSize / deckData.cumulativeSourceSize) * 100))}% reduction!`, socket);
             console.log(`New Presentation URL:<br>${toHref('https://docs.google.com/presentation/d/' + deckData.id)}`, socket);
-        });
-
-        socket.on('deleteGifs', async (props) => {
-            const {deckId} = props;
-
-            const sourceDir = `${__dirname}/gif/source/${deckId}/`;
-            const outputDir = `${__dirname}/gif/output/${deckId}/`;
-
-            // quick implementation of cleanup
-            console.log(`Cleaning up files...`, socket);
-            await removeFilesAndDirectory(sourceDir);
-            await removeFilesAndDirectory(outputDir);
         });
     });
 

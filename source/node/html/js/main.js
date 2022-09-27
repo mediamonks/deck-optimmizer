@@ -1,19 +1,17 @@
-// var input = document.getElementById('input');
 let count;
 let socket = io({transports: ['websocket']});
 let deckData;
 
 function onSignIn(googleUser) {
-    var profile = googleUser.getBasicProfile();
-    var id_token = googleUser.getAuthResponse().id_token;
+    const profile = googleUser.getBasicProfile();
+    const id_token = googleUser.getAuthResponse().id_token;
     window.sessionStorage.setItem('google-session', id_token);
     document.getElementById("signOutButton").style.display = "block";
-    // document.getElementById("beginButton").style.display = "inline-flex";
     displayMain()
 }
 
 function signOut() {
-    var auth2 = gapi.auth2.getAuthInstance();
+    const auth2 = gapi.auth2.getAuthInstance();
     auth2.signOut().then(function () {
         document.getElementById("signOutButton").style.display = "none";
     });
@@ -31,7 +29,8 @@ document.getElementById("form").addEventListener('submit', function (e) {
     const urlInput = document.getElementById("input");
 
     if (urlInput.value) {
-        const slideId = getSlideIdFromUrl(urlInput.value);
+        let [_, url2] = urlInput.value.split('https://docs.google.com/presentation/d/');
+        const [slideId] = url2.split('/');
 
         if (slideId) {
             document.querySelector('#form').remove();
@@ -42,16 +41,6 @@ document.getElementById("form").addEventListener('submit', function (e) {
         }
     }
 });
-
-function getSlideIdFromUrl(inputString) {
-    try {
-        let [_, url2] = inputString.split('https://docs.google.com/presentation/d/');
-        let [id] = url2.split('/');
-        return id;
-    } catch (e) {
-        return false;
-    }
-}
 
 function toggleSelection(event) {
     if (event.target.id === "autoLabel") {
@@ -68,12 +57,12 @@ function toggleSelection(event) {
 
 async function displayOptions(event) {
     //clear on every gif clicked
-    var source = document.getElementById('source');
-    var dest = document.getElementById('dest');
-    var gif = event.target;
-    var optionsColumn = gif.parentElement.nextSibling;
-    var optionsContainer = document.querySelector('#optionsContainer');
-    var outputGif = optionsColumn.nextSibling.firstChild;
+    const source = document.getElementById('source');
+    const dest = document.getElementById('dest');
+    const gif = event.target;
+    const optionsColumn = gif.parentElement.nextSibling;
+    const optionsContainer = document.querySelector('#optionsContainer');
+    const outputGif = optionsColumn.nextSibling.firstChild;
     document.getElementById('applyButton').innerHTML = "Optimize"
 
     try {
@@ -103,93 +92,55 @@ async function optimizeGif(event) {
     button.appendChild(img)
 
     if (auto) {
-        document.getElementById('instructionText').innerHTML = "Please wait while we apply optimization. <br>";
         updateDeck();
-        // socket.emit('autoOptimizeAll', {
-        //     deckData,
-        //     factor,
-        //     colourRange
-        // });
 
     } else {
-
         socket.emit('manualOptimizeSingleGif', {
             factor,
             colourRange,
+            sourceUrl: sourceGif.src,
             gifId: sourceGif.getAttribute('gifId'),
             deckId: sourceGif.getAttribute('deckId'),
         });
     }
 };
 
-function updateDeck(event) {
-    // var gifData = {};
-    // document.getElementById('loader').style.display = "inline-block";
-    // document.getElementById('previewTxt').style.display = "block";
-    // document.getElementById('previewTxt').innerHTML = "Updating deck. Please wait."
-    // let googletoken = window.sessionStorage.getItem('google-session');
-    //
-    // const gifElements = document.querySelectorAll('[gifid]');
-    // const deckid = gifElements[0].getAttribute('deckid');
-    // triggerLog()
-    //
-    //
-    // gifElements.forEach(element => {
-    //     gifData[element.getAttribute('gifid')] = element.getAttribute('src')
-    // });
-    //
-    // socket.emit('updateCopyDeck', { 'gifData': gifData, 'deckid': deckid, 'token': googletoken });
+function updateDeck(e) {
     triggerLog();
+    document.getElementById('instructionText').innerHTML = "Please wait while we apply optimization. <br>";
 
     const factor = document.getElementById('factor').value;
     const colourRange = document.getElementById('colourRange').value;
-    // const token = window.sessionStorage.getItem('google-session');
 
     socket.emit('autoOptimizeAll', {
         deckData,
         factor,
         colourRange
     });
-};
-
-function triggerLog(){
-    document.getElementById('optimizePanel').style.display = "none";
-    document.getElementById('helpTxt').style.display = "none";
-    document.getElementById('finishBtn').style.display = "none";
-    document.getElementById('optimizeChoice').style.display = 'none';
-    choiceContainer = document.getElementById('choiceContainer');
-    log = document.getElementById('log');
-    log.style.position = "static";
-    log.style.border = "none";
-    log.style.display = "block";
-    choiceContainer.parentElement.insertBefore(log, choiceContainer);
-    choiceContainer.style.display = 'none';
-    document.getElementById("optionsForm").style.display = "none";
-    document.getElementById("messages").style.display = "block";
 }
 
 function updateSliderValue(sliderId, target) {
-    var slider = document.getElementById(sliderId);
-    var target = document.getElementById(target);
-    target.innerHTML = slider.value;
+    const sliderEl = document.getElementById(sliderId);
+    const targetEl = document.getElementById(target);
+    targetEl.innerHTML = sliderEl.value;
 };
 
 function DisplayAuto() {
-    auto = document.getElementById('autoLabel');
+    const auto = document.getElementById('autoLabel');
     auto.style.background = "#E0E0E0";
     auto.style.borderRadius = "4px";
     auto.style.color = "black";
 
-    manual = document.getElementById('manLabel');
+    const manual = document.getElementById('manLabel');
     manual.style.background = "#3C4043";
     manual.style.color = "#fff";
 
     document.getElementById("helpTxt").innerHTML = "Optimize all the GIFs in your deck before sharing."
 
-    parent = document.getElementById('instructions');
-    container = document.querySelector('#optionsContainer')
+    const parent = document.getElementById('instructions');
+    const container = document.querySelector('#optionsContainer')
     parent.before(container);
-    document.getElementById('optionsForm').style.display.style = "block";
+    document.getElementById('optionsForm').style.display = "block";
 
     document.getElementById("applyButton").style.display = "inline-block";
     document.querySelector('#optimizePanel').style.display = 'none';
@@ -202,12 +153,12 @@ function DisplayAuto() {
 };
 
 function DisplayManual() {
-    manual = document.getElementById('manLabel');
+    const manual = document.getElementById('manLabel');
     manual.style.background = "#E0E0E0";
     manual.style.borderRadius = "4px";
     manual.style.color = "black";
 
-    auto = document.getElementById('autoLabel');
+    const auto = document.getElementById('autoLabel');
     auto.style.background = "#3C4043";
     auto.style.color = "#fff";
 
@@ -220,20 +171,18 @@ function DisplayManual() {
     document.getElementById('finishBtn').style.display = 'inline-block';
 
     if (document.getElementById("autoStep")){} else{
-        var ol = document.getElementById("instructList");
-        var li = document.createElement("li");
+        const ol = document.getElementById("instructList");
+        const li = document.createElement("li");
         li.id = "autoStep"
         li.appendChild(document.createTextNode("Once all of your chosen GIFs are optimized click 'Finalize Deck' to continue."));
         ol.appendChild(li);
     }
 };
 
-
-
 function copyText() {
-    var copyText = document.getElementById("shareEmailTxt");
-    var button = document.getElementById("copyButton");
-    var icon = document.getElementById("copyIcon");
+    const copyText = document.getElementById("shareEmailTxt");
+    const button = document.getElementById("copyButton");
+    const icon = document.getElementById("copyIcon");
     copyText.select();
     navigator.clipboard.writeText(copyText.value);
     button.style.backgroundColor = "#5F6368";
@@ -246,17 +195,21 @@ function cancelOptimization(event) {
     location.reload();
 };
 
-
-function formatSizeUnits(bytes) {
-    if      (bytes >= 1073741824) { bytes = (bytes / 1073741824).toFixed(2) + " GB"; }
-    else if (bytes >= 1048576)    { bytes = (bytes / 1048576).toFixed(2) + " MB"; }
-    else if (bytes >= 1024)       { bytes = (bytes / 1024).toFixed(2) + " KB"; }
-    else if (bytes > 1)           { bytes = bytes + " bytes"; }
-    else if (bytes === 1)          { bytes = bytes + " byte"; }
-    else                          { bytes = "0 bytes"; }
-    return bytes;
+function triggerLog(){
+    document.getElementById('optimizePanel').style.display = "none";
+    document.getElementById('helpTxt').style.display = "none";
+    document.getElementById('finishBtn').style.display = "none";
+    document.getElementById('optimizeChoice').style.display = 'none';
+    const choiceContainer = document.getElementById('choiceContainer');
+    const log = document.getElementById('log');
+    log.style.position = "static";
+    log.style.border = "none";
+    log.style.display = "block";
+    choiceContainer.parentElement.insertBefore(log, choiceContainer);
+    choiceContainer.style.display = 'none';
+    document.getElementById("optionsForm").style.display = "none";
+    document.getElementById("messages").style.display = "block";
 }
-
 
 socket.on("connect", () => {
     socket.on("TriggerDisplayOptions", async function (){
@@ -302,23 +255,21 @@ socket.on("connect", () => {
 
         deckData = msg;
 
-        console.log(deckData)
-
-        msg.gifs.forEach(gifElement => {
+        msg.gifs.forEach(gif => {
             const targetArea = document.getElementById('optimizePanel');
             let ul = document.createElement('ul');
             let li = document.createElement('li');
-            let gif = document.createElement('img');
+            let gifEl = document.createElement('img');
             let sourceStats = document.createElement('div');
 
             // Source gif
             ul.appendChild(li);
-            gif.src = gifElement.s3source;
-            gif.setAttribute('gifId', gifElement.objectId);
-            gif.setAttribute('deckId', msg.id);
-            li.appendChild(gif);
+            gifEl.src = gif.source.url;
+            gifEl.setAttribute('gifId', gif.sourceElement.objectId);
+            gifEl.setAttribute('deckId', msg.id);
+            li.appendChild(gifEl);
 
-            sourceStats.innerHTML = `Original size: ${formatSizeUnits(gifElement.fileSize)}`;
+            sourceStats.innerHTML = `Original size: ${formatSizeUnits(gif.source.sourceSize)}`;
             sourceStats.className = 'stats';
             li.appendChild(sourceStats);
 
@@ -331,41 +282,29 @@ socket.on("connect", () => {
             let outputStats = document.createElement('div');
 
             ul.appendChild(li);
-            //outputGif.src = val['output'];
-            outputGif.setAttribute('gifId', gifElement.objectId);
+            outputGif.setAttribute('gifId', gif.sourceElement.objectId);
             outputGif.setAttribute('deckId', msg.id);
             li.appendChild(outputGif);
 
             outputStats.innerHTML = ``;
-            outputStats.className = `stats ${gifElement.objectId}`;
-            outputStats.setAttribute('gifId', gifElement.objectId)
+            outputStats.className = `stats ${gif.sourceElement.objectId}`;
+            outputStats.setAttribute('gifId', gif.sourceElement.objectId)
             li.appendChild(outputStats);
 
-            gif.addEventListener("click", displayOptions, false);
+            gifEl.addEventListener("click", displayOptions, false);
             targetArea.appendChild(ul);
         });
 
         const item = document.createElement('li');
-        // item.innerHTML = "Preview loaded.";
+        console.log(messages)
         messages.insertBefore(item, messages.firstChild);
     });
 
-    socket.on('optimizationCompleted', function (msg) {
-        current_count = parseInt(window.sessionStorage.getItem('optimizationCount'));
-        total_count = parseInt(window.sessionStorage.getItem('optimizationLength'));
-        var item = document.createElement('li');
-        item.innerHTML = "Optimized #"+(current_count+1)+" of "+ total_count;
-        messages.insertBefore(item, messages.firstChild);
-        window.sessionStorage.setItem('optimizationCount', current_count + 1);
-        if (current_count+1 == total_count){
-            document.getElementById('finishBtn').click();
-        }
-    });
 
     socket.on('finishProcess', function (msg) {
         const toHref = (url, label) => '<a target="_blank" href="'+url+'">' + (label || url) + '</a>';
-        let deckurl = toHref(msg.link)
-        document.getElementById('previewTxt').innerHTML = "Process complete! You are now the owner of the optimized deck & will receive an email confirmation.<br> You can find a copy of the deck in your personal drive or by following this link: <br><br>" + deckurl;
+        let deckUrl = toHref(msg.link)
+        document.getElementById('previewTxt').innerHTML = "Process complete! You are now the owner of the optimized deck & will receive an email confirmation.<br> You can find a copy of the deck in your personal drive or by following this link: <br><br>" + deckUrl;
         document.getElementById('previewTxt').style.display = 'block';
         document.getElementById('cancelBtn').style.display = "none";
         document.getElementById('restart').style.display = "inline-block";
@@ -379,3 +318,13 @@ socket.on("connect", () => {
         console.log(msg.data)
     });
 });
+
+function formatSizeUnits(bytes) {
+    if      (bytes >= 1073741824) { bytes = (bytes / 1073741824).toFixed(2) + " GB"; }
+    else if (bytes >= 1048576)    { bytes = (bytes / 1048576).toFixed(2) + " MB"; }
+    else if (bytes >= 1024)       { bytes = (bytes / 1024).toFixed(2) + " KB"; }
+    else if (bytes > 1)           { bytes = bytes + " bytes"; }
+    else if (bytes === 1)          { bytes = bytes + " byte"; }
+    else                          { bytes = "0 bytes"; }
+    return bytes;
+}
