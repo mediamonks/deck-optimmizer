@@ -88,16 +88,21 @@ app.get('/', (req, res) => {
             let counter = 0;
             let gifElements = await Promise.all(imageElements.map(element => {
                 return limit(async () => {
-                    const fileData = await probe(element.image.contentUrl);
-                    counter += 1;
-                    socket.emit('DisplayTxt', {txt: `Checked #${counter} of ${imageElements.length} images...`});
+                    try {
+                        const fileData = await probe(element.image.contentUrl);
 
-                    if (fileData.type === 'gif') {
-                        return {
-                            ...element,
-                            fileData
-                        };
-                    } else {
+                        counter += 1;
+                        socket.emit('DisplayTxt', {txt: `Checked #${counter} of ${imageElements.length} images...`});
+
+                        if (fileData.type === 'gif') {
+                            return {
+                                ...element,
+                                fileData
+                            };
+                        } else {
+                            return 'not a gif';
+                        }
+                    } catch (e) {
                         return 'not a gif';
                     }
                 })
